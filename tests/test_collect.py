@@ -62,7 +62,7 @@ def test_refunded_bets_are_skipped():
 
 def test_scraper_parses_recorded_pages():
     links = scraper.parse_race_links((FIXTURES / "turffr_index.html").read_text(encoding="utf-8"))
-    assert links and all("/arrivees-rapports/" in link for link in links)
+    assert links and all(link.startswith("https://www.turf-fr.com/courses-pmu/arrivees-rapports/") for link in links)
     parsed = scraper.parse_arrival_page((FIXTURES / "turffr_arrivee.html").read_text(encoding="utf-8"))
     assert parsed == (date(2026, 10, 16), 1, 6, "8-11-9-12-17")
 
