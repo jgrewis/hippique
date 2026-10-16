@@ -18,6 +18,10 @@ def distance_bucket(distance):
     return next(label for limit, label in DISTANCE_BUCKETS if distance < limit)
 
 
+def _paris_list(course: dict) -> list:
+    return [p for p in (course["paris"] or "").split(",") if p]
+
+
 def _market_probs(partants: list) -> dict:
     odds = {p["numero"]: p["cote_matin"] or p["cote_actuelle"] for p in partants if not p["non_partant"]}
     if not odds or any(o is None or o <= 1 for o in odds.values()):
@@ -34,7 +38,7 @@ def day_context(conn, day: str, dates: list) -> dict:
     courses = [dict(c) for c in repo.courses_for_day(conn, day)]
     for c in courses:
         c["distance_bucket"] = distance_bucket(c["distance_m"])
-        c["paris_list"] = [p for p in (c["paris"] or "").split(",") if p]
+        c["paris_list"] = _paris_list(c)
     reunions = [
         {"num": num, "hippodrome": group[0]["hippodrome"], "courses": group}
         for num, items in groupby(courses, key=lambda c: c["num_reunion"])
@@ -60,6 +64,7 @@ def day_context(conn, day: str, dates: list) -> dict:
 
 def course_context(conn, course) -> dict:
     course = dict(course)
+    course["paris_list"] = _paris_list(course)
     partants = [dict(p) for p in repo.partants_for_course(conn, course["id_course"])]
     pronos = repo.pronostics_for_course(conn, course["id_course"])
     market = _market_probs(partants)

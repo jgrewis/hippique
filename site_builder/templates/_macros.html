@@ -1,5 +1,6 @@
 {% macro bet_badges(paris_list) %}
-  {% for p in paris_list %}<span class="badge badge-{{ p | lower }}">{{ p | bet_label }}</span>{% endfor %}
+  {# The hidden separator keeps bet names apart for screen readers and the CSV export. #}
+  {% for p in paris_list %}<span class="badge badge-{{ p | lower }}">{{ p | bet_label }}</span>{% if not loop.last %}<span class="sr-only">, </span>{% endif %}{% endfor %}
 {% endmacro %}
 
 {% macro arrival_line(arrivee) %}

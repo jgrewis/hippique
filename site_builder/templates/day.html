@@ -8,7 +8,7 @@
     {% if prev_day %}<a class="button" href="{{ root }}jour/{{ prev_day }}.html" rel="prev">← <span class="sr-only">Jour précédent :</span>{{ prev_day | fr_date(false) }}</a>{% endif %}
     <form class="date-jump js-only" hidden data-root="{{ root }}">
       <label for="date-jump">Aller au</label>
-      <input type="date" id="date-jump" min="{{ first_day }}" max="{{ last_day }}" value="{{ day }}">
+      <input type="date" id="date-jump" min="{{ first_day }}" max="{{ last_day }}" value="{{ day }}" required>
       <button type="submit" class="button">OK</button>
     </form>
     {% if next_day %}<a class="button" href="{{ root }}jour/{{ next_day }}.html" rel="next"><span class="sr-only">Jour suivant :</span>{{ next_day | fr_date(false) }} →</a>{% endif %}

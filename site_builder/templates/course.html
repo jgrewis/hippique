@@ -14,7 +14,7 @@
   <div><dt>Partants</dt><dd>{{ course.nb_partants or "–" }}</dd></div>
   <div><dt>Allocation</dt><dd>{{ course.montant_prix | euros }}</dd></div>
   {% if course.terrain %}<div><dt>Terrain</dt><dd>{{ course.terrain }}</dd></div>{% endif %}
-  {% if course.paris %}<div><dt>Paris</dt><dd>{{ bet_badges(course.paris.split(",")) }}</dd></div>{% endif %}
+  {% if course.paris_list %}<div><dt>Paris</dt><dd>{{ bet_badges(course.paris_list) }}</dd></div>{% endif %}
 </dl>
 
 {% if arrival %}

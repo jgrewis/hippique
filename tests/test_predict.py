@@ -23,7 +23,6 @@ def test_harville_sums_to_one():
     assert total == pytest.approx(1.0)
     assert harville.prob_unordered(p, [1, 2, 3]) == pytest.approx(1.0)
     assert harville.prob_order(p, [1, 2]) == pytest.approx(0.5 * 0.3 / 0.5)
-    assert harville.best_order(p, 2) == [1, 2]
 
 
 def _synthetic_races(n_races=400, seed=0):

@@ -5,9 +5,8 @@ on:
     - cron: "0 4 * * 1"   # Monday 04:00 UTC
   workflow_dispatch:
 
-permissions:
-  contents: write
-  actions: write   # to republish the site afterwards
+# Least privilege: nothing by default, the job asks for what it needs.
+permissions: {}
 
 concurrency:
   group: data
@@ -17,6 +16,9 @@ jobs:
   train:
     runs-on: ubuntu-latest
     timeout-minutes: 60
+    permissions:
+      contents: write   # release assets holding the database and model
+      actions: write    # republish the site and keep schedules enabled
     env:
       GH_TOKEN: ${{ github.token }}
     steps:

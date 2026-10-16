@@ -17,7 +17,3 @@ def prob_unordered(p: dict, horses: list) -> float:
     """P(the given horses take the first len(horses) places, in any order)."""
     return sum(prob_order(p, list(perm)) for perm in permutations(horses))
 
-
-def best_order(p: dict, k: int) -> list:
-    """Most likely k-horse order: under Harville it is the sort by win probability."""
-    return sorted(p, key=p.get, reverse=True)[:k]
