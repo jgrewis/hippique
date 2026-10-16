@@ -95,8 +95,9 @@ jobs:
       - name: Compléter l'historique
         continue-on-error: true
         run: python -m scripts.backfill --days 365 --budget-minutes 35
-      - name: Premier modèle si absent
-        run: "[ -f data/model.json ] || python -m predict.train"
+      # Cheap (seconds): keeps the reliability page and the logit model current.
+      - name: Entraîner et tester toutes les sources
+        run: python -m predict.train
       - name: Sauvegarder la base
         run: scripts/data_store.sh save
 

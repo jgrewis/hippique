@@ -3,8 +3,13 @@
   {% for p in paris_list %}<span class="badge badge-{{ p | lower }}">{{ p | bet_label }}</span>{% if not loop.last %}<span class="sr-only">, </span>{% endif %}{% endfor %}
 {% endmacro %}
 
+{# Official finish as saddle cloths, place shown above each number. Hidden dashes keep "4-11-7" for screen readers and CSV. #}
 {% macro arrival_line(arrivee) %}
-  {% if arrivee %}<span class="arrival">{{ arrivee }}</span>{% else %}<span class="muted">–</span>{% endif %}
+  {% if arrivee %}
+  <ol class="arrival-chips">
+    {% for group in arrivee | arrival_groups %}<li><span class="arrival-place">{{ loop.index | ordinal }}</span>{% for n in group %}<span class="num">{{ n }}</span>{% endfor %}{% if not loop.last %}<span class="sr-only">-</span>{% endif %}</li>{% endfor %}
+  </ol>
+  {% else %}<span class="muted">en attente</span>{% endif %}
 {% endmacro %}
 
 {% macro export_button(table_id, filename) %}
@@ -14,19 +19,24 @@
 {% macro prono_box(pronostic, root, uid) %}
   {% if pronostic %}
   <section class="card prono" aria-labelledby="prono-{{ uid }}">
-    <h2 id="prono-{{ uid }}">Pronostic statistique
-      <small>({{ "modèle logit" if pronostic.methode == "logit" else "score de forme" }})</small></h2>
+    <h2 id="prono-{{ uid }}">Pronostic <small>({{ pronostic.methode | lower }})</small></h2>
     <ol class="selection">
       {% for p in pronostic.selection %}
       <li><span class="num">{{ p.numero }}</span> {{ p.nom_cheval }}</li>
       {% endfor %}
     </ol>
     {% if pronostic.chances %}
-    <p class="chances">Probabilité estimée avec cette sélection :
+    <p class="chances">Probabilité estimée avec cette sélection ({{ pronostic.modele_probas | lower }}) :
       {% for label, value in pronostic.chances %}{{ label }} {{ value | pct }}{% if not loop.last %} · {% endif %}{% endfor %}
     </p>
     {% endif %}
     <p class="note"><a href="{{ root }}methodo.html">Comment c'est calculé</a> · <a href="{{ root }}fiabilite.html">fiabilité mesurée</a></p>
   </section>
   {% endif %}
+{% endmacro %}
+
+{% macro picks(items) %}
+  <ol class="picks">
+    {% for p in items %}<li{% if p.place and p.place <= 3 %} class="is-hit"{% endif %}><span class="num">{{ p.numero }}</span>{% if p.place %}<span class="pick-place"><span class="sr-only">arrivé </span>{{ p.place | ordinal }}</span>{% endif %}</li>{% endfor %}
+  </ol>
 {% endmacro %}

@@ -23,7 +23,12 @@
     {{ quinte.hippodrome }} · R{{ quinte.num_reunion }}C{{ quinte.num_course }} · {{ quinte.heure_depart or "–" }}
     · {{ quinte.discipline }} · <span class="nowrap">{{ quinte.distance_m | fr_number(0) }}&nbsp;m</span> · {{ quinte.nb_partants }} partants
   </p>
-  {% if quinte.arrivee %}<p>Arrivée : {{ arrival_line(quinte.arrivee) }}</p>{% endif %}
+  {% if quinte.arrivee %}
+  <div class="arrival-ref">
+    <span class="arrival-ref-label">Arrivée officielle</span>
+    {{ arrival_line(quinte.arrivee) }}
+  </div>
+  {% endif %}
   {{ prono_box(quinte_detail.pronostic, root, quinte.id_course) }}
 </section>
 {% endif %}
@@ -65,9 +70,9 @@
   <caption class="sr-only">Courses du {{ day | fr_date }}</caption>
   <thead>
     <tr>
-      <th scope="col">Course</th><th scope="col">Heure</th><th scope="col">Nom</th><th scope="col">Hippodrome</th>
-      <th scope="col">Discipline</th><th scope="col" class="num">Distance</th><th scope="col" class="num">Partants</th>
-      <th scope="col">Paris</th><th scope="col">Arrivée</th>
+      <th scope="col">Course</th><th scope="col">Heure</th><th scope="col">Nom</th><th scope="col">Arrivée</th>
+      <th scope="col">Hippodrome</th><th scope="col">Discipline</th><th scope="col" class="num">Distance</th>
+      <th scope="col" class="num">Partants</th><th scope="col">Paris</th>
     </tr>
   </thead>
   {% for reunion in reunions %}
@@ -78,12 +83,12 @@
       <td><a href="{{ root }}course/{{ c.id_course }}.html">R{{ c.num_reunion }}C{{ c.num_course }}</a></td>
       <td>{{ c.heure_depart or "–" }}</td>
       <td><a href="{{ root }}course/{{ c.id_course }}.html">{{ c.nom_course }}</a></td>
+      <td>{{ arrival_line(c.arrivee) }}</td>
       <td>{{ c.hippodrome }}</td>
       <td>{{ c.discipline or "–" }}</td>
       <td class="num">{{ c.distance_m | fr_number(0) }}&nbsp;m</td>
       <td class="num">{{ c.nb_partants or "–" }}</td>
       <td>{{ bet_badges(c.paris_list) }}</td>
-      <td>{{ arrival_line(c.arrivee) }}</td>
     </tr>
     {% endfor %}
   </tbody>

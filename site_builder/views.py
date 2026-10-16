@@ -4,11 +4,20 @@ from itertools import groupby
 
 import config
 from db import repository as repo
-from predict import backtest, harville
+from predict import backtest, harville, sources
 from predict.form_score import LABELS as FORM_LABELS
 
 RAPPORT_ORDER = ("QUINTE_PLUS", "QUARTE_PLUS", "TIERCE", "MULTI", "DEUX_SUR_QUATRE",
                  "COUPLE_GAGNANT", "COUPLE_PLACE", "SIMPLE_GAGNANT", "SIMPLE_PLACE")
+PICKS_SHOWN = 8
+DISPLAY_FAMILIES = (
+    ("maison", "Méthodes maison"),
+    ("pmu", "PMU"),
+    ("synthese", "Synthèse de la presse"),
+    ("presse", "Presse et experts"),
+    ("parieurs", "Parieurs"),
+    ("combinaisons", "Combinaisons les plus jouées"),
+)
 DISTANCE_BUCKETS = ((1600, "< 1 600 m"), (2100, "1 600 – 2 099 m"), (2700, "2 100 – 2 699 m"), (10 ** 6, "≥ 2 700 m"))
 
 
@@ -68,14 +77,18 @@ def course_context(conn, course) -> dict:
     partants = [dict(p) for p in repo.partants_for_course(conn, course["id_course"])]
     pronos = repo.pronostics_for_course(conn, course["id_course"])
     market = _market_probs(partants)
+    selections = repo.selections_for_course(conn, course["id_course"])
+    press = [s for s in selections if s["famille"] == "presse"]
     for p in partants:
-        p["forme"] = pronos.get("forme", {}).get(p["numero"])
         p["logit"] = pronos.get("logit", {}).get(p["numero"])
+        p["boosting"] = pronos.get("boosting", {}).get(p["numero"])
         p["proba_marche"] = market.get(p["numero"])
         p["valeur"] = (p["logit"]["proba"] / p["proba_marche"]) if p["logit"] and p["proba_marche"] else None
+        p["citations"] = sum(str(p["numero"]) in s["numeros"].split("-") for s in press)
 
     by_num = {p["numero"]: p for p in partants}
-    arrival = [by_num.get(n, {"numero": n, "nom_cheval": "?"}) for n in _arrival_numbers(course["arrivee"])]
+    arrival_numbers = _arrival_numbers(course["arrivee"])
+    arrival = [by_num.get(n, {"numero": n, "nom_cheval": "?"}) for n in arrival_numbers]
 
     rapports = sorted(
         (dict(r) for r in repo.rapports_for_course(conn, course["id_course"])),
@@ -88,23 +101,76 @@ def course_context(conn, course) -> dict:
         "arrival": arrival,
         "rapport_groups": rapport_groups,
         "pronostic": _pronostic_summary(pronos, by_num, course),
+        "pronostic_groups": _pronostic_groups(pronos, selections, market, _places(course["arrivee"])),
+        "nb_presse": len(press),
     }
 
 
+def _house_rankings(pronos: dict) -> list:
+    """Stored house forecasts as SourceRanking objects, best method first."""
+    out = []
+    for key, label in sources.HOUSE_LABELS.items():
+        if key in pronos:
+            rows = sorted(pronos[key].values(), key=lambda r: r["rang"])
+            out.append(sources.SourceRanking(
+                key, label, "maison", [r["numero"] for r in rows],
+                probas={r["numero"]: r["proba"] for r in rows if r["proba"] is not None},
+            ))
+    return out
+
+
+def _places(arrivee: str) -> dict:
+    """{numero: place} for the first five places (dead heats share a place)."""
+    places = {}
+    for place, group in enumerate((arrivee or "").split("-")[:5], start=1):
+        for n in group.split("="):
+            if n.isdigit():
+                places[int(n)] = place
+    return places
+
+
+def _pronostic_groups(pronos: dict, selections: list, market: dict, places: dict) -> list:
+    """Every source's selection, grouped by family, for display, with each runner's final place (top 5)."""
+    rows_by_family = {family: [] for family, _ in DISPLAY_FAMILIES}
+    for ranking in _house_rankings(pronos):
+        rows_by_family["maison"].append((ranking.label, ranking.numeros))
+    favourite = sources.market_ranking(market)
+    if favourite:
+        rows_by_family["parieurs"].append((favourite.label, favourite.numeros))
+    order = {key: i for i, key in enumerate(sources.SYNTHESIS_ORDER)}
+    for s in sorted(selections, key=lambda s: order.get(s["source"], len(order))):
+        if s["famille"] in rows_by_family:
+            rows_by_family[s["famille"]].append((s["libelle"], [int(n) for n in s["numeros"].split("-") if n.isdigit()]))
+    groups = []
+    for family, title in DISPLAY_FAMILIES:
+        rows = [
+            {"label": label, "picks": [{"numero": n, "place": places.get(n)} for n in numeros[:PICKS_SHOWN]]}
+            for label, numeros in rows_by_family[family] if numeros
+        ]
+        if rows:
+            groups.append({"key": family, "title": title, "rows": rows})
+    return groups
+
+
 def _pronostic_summary(pronos: dict, by_num: dict, course: dict):
+    """Headline forecast: the consensus when available, with Harville odds from a probabilistic model."""
     if not pronos:
         return None
-    method = "logit" if "logit" in pronos else "forme"
+    method = next((m for m in ("consensus", "logit", "boosting", "forme") if m in pronos), None)
+    if method is None:
+        return None
     ordered = sorted(pronos[method].values(), key=lambda r: r["rang"])
     picks = [by_num[r["numero"]] for r in ordered if r["numero"] in by_num]
-    summary = {"methode": method, "selection": picks[:5], "chances": []}
-    if method == "logit":
-        p = {n: r["proba"] for n, r in pronos["logit"].items()}
+    summary = {"methode": sources.HOUSE_LABELS[method], "selection": picks[:5], "chances": []}
+    model = next((m for m in ("logit", "boosting") if m in pronos), None)
+    if model:
+        p = {n: r["proba"] for n, r in pronos[model].items()}
         top = [x["numero"] for x in picks]
         summary["chances"].append(("Tiercé dans le désordre", harville.prob_unordered(p, top[:3])))
         summary["chances"].append(("Tiercé dans l'ordre", harville.prob_order(p, top[:3])))
         if course["is_quinte"] and len(top) >= 5:
             summary["chances"].append(("Quinté+ dans le désordre", harville.prob_unordered(p, top[:5])))
+        summary["modele_probas"] = sources.HOUSE_LABELS[model]
     return summary
 
 
@@ -118,7 +184,7 @@ def archives_context(conn) -> dict:
 
 
 def _live_entries(conn) -> list:
-    """Forecasts made before the race, joined with the official arrival."""
+    """Forecasts published before the race (house and third-party), joined with the official arrival."""
     payouts = backtest.winning_payouts(conn)
     ids = [r[0] for r in conn.execute(
         "SELECT DISTINCT p.id_course FROM pronostics p JOIN courses c USING (id_course) WHERE c.arrivee IS NOT NULL"
@@ -129,23 +195,38 @@ def _live_entries(conn) -> list:
         arrivee = {p["numero"]: p["arrivee"] for p in partants if p["arrivee"]}
         if not arrivee:
             continue
-        pronos = repo.pronostics_for_course(conn, cid)
-        ranks = {m: [r["numero"] for r in sorted(rows.values(), key=lambda r: r["rang"])] for m, rows in pronos.items()}
-        probas = {"logit": {n: r["proba"] for n, r in pronos["logit"].items()}} if "logit" in pronos else {}
-        market = _market_probs(partants)
-        if market:
-            ranks["favori"] = sorted(market, key=market.get, reverse=True)
-            probas["marche"] = market
-        entries.append({"rankings": ranks, "probas": probas, "arrivee": arrivee, "rapport_gagnant": payouts.get(cid)})
+        runners = [p["numero"] for p in partants if not p["non_partant"]]
+        rankings = _house_rankings(repo.pronostics_for_course(conn, cid))
+        favourite = sources.market_ranking(_market_probs(partants))
+        if favourite:
+            rankings.append(favourite)
+        rankings += sources.external_rankings(runners, repo.selections_for_course(conn, cid), only_before_start=True)
+        entries.append(backtest.entry(rankings, arrivee, payouts.get(cid), len(runners)))
     return entries
 
 
+def with_groups(metrics: dict) -> dict:
+    """Add [(family label, [sources])] in the order computed by the evaluation."""
+    groups = [(label, list(rows)) for label, rows in groupby(metrics["sources"], key=lambda m: m["famille_label"])]
+    return {**metrics, "groupes": groups}
+
+
+def _load_backtest():
+    if not config.BACKTEST_PATH.exists():
+        return None
+    report = json.loads(config.BACKTEST_PATH.read_text(encoding="utf-8"))
+    # Reports written before every source was compared have another shape.
+    if "sources" not in report.get("metriques", {}):
+        return None
+    return {**report, "metriques": with_groups(report["metriques"])}
+
+
 def reliability_context(conn) -> dict:
-    report = json.loads(config.BACKTEST_PATH.read_text(encoding="utf-8")) if config.BACKTEST_PATH.exists() else None
     entries = _live_entries(conn)
     return {
-        "backtest": report,
-        "live": backtest.evaluate(entries) if entries else None,
+        "backtest": _load_backtest(),
+        "live": with_groups(backtest.evaluate(entries)) if entries else None,
         "live_count": len(entries),
-        "feature_labels": FORM_LABELS | {"poids": "Poids porté"},
+        "min_courses": backtest.MIN_COURSES,
+        "feature_labels": FORM_LABELS | {"poids": "Poids porté", "elo_cheval": "Elo du cheval", "elo_driver": "Elo du driver / jockey"},
     }

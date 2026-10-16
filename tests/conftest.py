@@ -9,6 +9,7 @@ from db import repository as repo
 
 FIXTURES = Path(__file__).parent / "fixtures"
 DAY = date(2026, 9, 15)
+TODAY = date(2026, 10, 16)
 
 
 def load(name):
@@ -27,7 +28,7 @@ class FakeResponse:
 
 
 class FakeHttp:
-    """Serves recorded PMU responses: only R1C1 of 15/09/2026 has participants and payouts."""
+    """Serves recorded PMU responses: only R1C1 of 15/09/2026 has data (participants, payouts, forecasts)."""
 
     def __init__(self):
         self.request_count = 0
@@ -42,6 +43,9 @@ class FakeHttp:
             return FakeResponse(load("participants_15092026_R1C1.json"))
         if url.endswith("/15092026/R1/C1/rapports-definitifs"):
             return FakeResponse(load("rapports_15092026_R1C1.json"))
+        for endpoint in ("pronostics", "pronostics-detailles", "combinaisons"):
+            if url.endswith(f"/15092026/R1/C1/{endpoint}"):
+                return FakeResponse(load(f"{endpoint}_15092026_R1C1.json"))
         return FakeResponse(None)
 
 
@@ -54,5 +58,5 @@ def conn(tmp_path):
 
 @pytest.fixture
 def filled_conn(conn):
-    collect_day(conn, FakeHttp(), DAY, repo.now_iso(), today=date(2026, 10, 16))
+    collect_day(conn, FakeHttp(), DAY, repo.now_iso(), today=TODAY)
     return conn

@@ -2,34 +2,33 @@
 {% block title %}Fiabilité des pronostics{% endblock %}
 {% block content %}
 <h1>Fiabilité des pronostics</h1>
-<p class="lead">Les pronostics ne valent que ce que montrent leurs résultats. Cette page les compare à la réalité
-  et à la stratégie la plus simple : jouer le favori. Le gain ou la perte correspond à 1 € joué en simple gagnant
-  sur le premier choix de chaque course.</p>
+<p class="lead">Les pronostics ne valent que ce que montrent leurs résultats. Cette page compare toutes les sources
+  avec les mêmes indicateurs : méthodes maison, PMU, presse et experts, favoris des cotes et chevaux les plus joués.
+  Le gain ou la perte correspond à 1 € joué en simple gagnant sur le premier choix de chaque course.
+  Une source suivie sur moins de {{ min_courses }} courses est grisée : ses chiffres relèvent encore du hasard.</p>
 
 <section aria-labelledby="live-title">
   <h2 id="live-title">Résultats réels</h2>
   {% if live %}
-    <p>Pronostics publiés avant le départ et comparés à l'arrivée officielle, sur {{ live_count }} courses.</p>
+    <p>Pronostics enregistrés avant le départ et comparés à l'arrivée officielle, sur {{ live_count }} courses.
+      Pour la presse et le PMU, seules les sélections collectées avant le départ comptent.</p>
     {% with metrics = live, caption = "Pronostics publiés sur ce site" %}{% include "_metrics_table.html" %}{% endwith %}
   {% else %}
-    <p class="empty">Pas encore de course terminée avec un pronostic publié avant le départ.</p>
+    <p class="empty">Pas encore de course terminée avec un pronostic enregistré avant le départ.</p>
   {% endif %}
 </section>
 
 <section aria-labelledby="bt-title">
   <h2 id="bt-title">Test sur l'historique</h2>
   {% if backtest %}
-    <p>Le modèle est entraîné sur les courses du {{ backtest.entrainement.du | fr_date(false) }} au {{ backtest.entrainement.au | fr_date(false) }}
-      ({{ backtest.entrainement.courses | fr_number(0) }} courses). Il est ensuite testé sur les courses du {{ backtest.test.du | fr_date(false) }}
-      au {{ backtest.test.au | fr_date(false) }} ({{ backtest.test.courses | fr_number(0) }} courses), qu'il n'avait jamais vues.
+    <p>Les modèles sont entraînés sur les courses du {{ backtest.entrainement.du | fr_date(false) }} au {{ backtest.entrainement.au | fr_date(false) }}
+      ({{ backtest.entrainement.courses | fr_number(0) }} courses). Ils sont ensuite testés sur les courses du {{ backtest.test.du | fr_date(false) }}
+      au {{ backtest.test.au | fr_date(false) }} ({{ backtest.test.courses | fr_number(0) }} courses), qu'ils n'avaient jamais vues.
+      Les sources externes sont évaluées sur les mêmes courses quand leurs sélections sont disponibles.
       Calcul du {{ backtest.genere_le | fr_datetime_utc }}.</p>
     {% with metrics = backtest.metriques, caption = "Test sur des courses non vues pendant l'entraînement" %}{% include "_metrics_table.html" %}{% endwith %}
-    {% if backtest.metriques.log_loss is defined %}
-    <p class="note">Perte logarithmique (plus bas = meilleures probabilités) : modèle {{ backtest.metriques.log_loss.logit | fr_number(3) }}
-      {% if backtest.metriques.log_loss.marche is defined %} · cotes du matin {{ backtest.metriques.log_loss.marche | fr_number(3) }}{% endif %}.</p>
-    {% endif %}
 
-    <h3>Poids appris par le modèle</h3>
+    <h3>Poids appris par le modèle logit</h3>
     <div class="table-wrap" tabindex="0" role="region" aria-label="Coefficients du modèle">
     <table class="data-table compact">
       <thead><tr><th scope="col">Critère</th><th scope="col" class="num">Coefficient</th></tr></thead>
@@ -44,7 +43,7 @@
     </div>
     <p class="note">Un coefficient positif signifie que plus le critère est élevé par rapport aux autres partants, plus les chances de gagner augmentent.</p>
   {% else %}
-    <p class="empty">Historique encore insuffisant : le modèle sera entraîné quand au moins 300 courses terminées seront en base.</p>
+    <p class="empty">Pas encore de test disponible : il est calculé dès que 300 courses terminées sont en base, puis à chaque collecte.</p>
   {% endif %}
 </section>
 {% endblock %}

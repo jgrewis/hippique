@@ -1,0 +1,121 @@
+{
+ "selection": [
+  {
+   "commentaire": "Commentaire factice PMU n° 1.",
+   "num_partant": 7,
+   "rang": 1,
+   "cote_prob": "9/1",
+   "id_nav_partant": "20260915-COM-1-7"
+  },
+  {
+   "commentaire": "Commentaire factice PMU n° 2.",
+   "num_partant": 8,
+   "rang": 2,
+   "cote_prob": "9/1",
+   "id_nav_partant": "20260915-COM-1-8"
+  },
+  {
+   "commentaire": "Commentaire factice PMU n° 3.",
+   "num_partant": 1,
+   "rang": 3,
+   "cote_prob": "8/1",
+   "id_nav_partant": "20260915-COM-1-1"
+  },
+  {
+   "commentaire": "Commentaire factice PMU n° 4.",
+   "num_partant": 6,
+   "rang": 4,
+   "cote_prob": "7/1",
+   "id_nav_partant": "20260915-COM-1-6"
+  },
+  {
+   "commentaire": "Commentaire factice PMU n° 5.",
+   "num_partant": 4,
+   "rang": 5,
+   "cote_prob": "6/1",
+   "id_nav_partant": "20260915-COM-1-4"
+  },
+  {
+   "commentaire": "Commentaire factice PMU n° 6.",
+   "num_partant": 12,
+   "rang": 6,
+   "cote_prob": "23/1",
+   "id_nav_partant": "20260915-COM-1-12"
+  },
+  {
+   "commentaire": "Commentaire factice PMU n° 7.",
+   "num_partant": 15,
+   "rang": 7,
+   "cote_prob": "14/1",
+   "id_nav_partant": "20260915-COM-1-15"
+  },
+  {
+   "commentaire": "Commentaire factice PMU n° 8.",
+   "num_partant": 14,
+   "rang": 8,
+   "cote_prob": "19/1",
+   "id_nav_partant": "20260915-COM-1-14"
+  },
+  {
+   "commentaire": "Commentaire factice PMU n° 9.",
+   "num_partant": 9,
+   "rang": 9,
+   "cote_prob": "13/1",
+   "id_nav_partant": "20260915-COM-1-9"
+  },
+  {
+   "commentaire": "Commentaire factice PMU n° 10.",
+   "num_partant": 3,
+   "rang": 10,
+   "cote_prob": "15/1",
+   "id_nav_partant": "20260915-COM-1-3"
+  },
+  {
+   "commentaire": "Commentaire factice PMU n° 11.",
+   "num_partant": 11,
+   "rang": 11,
+   "cote_prob": "16/1",
+   "id_nav_partant": "20260915-COM-1-11"
+  },
+  {
+   "commentaire": "Commentaire factice PMU n° 12.",
+   "num_partant": 2,
+   "rang": 12,
+   "cote_prob": "26/1",
+   "id_nav_partant": "20260915-COM-1-2"
+  },
+  {
+   "commentaire": "Commentaire factice PMU n° 13.",
+   "num_partant": 10,
+   "rang": 13,
+   "cote_prob": "29/1",
+   "id_nav_partant": "20260915-COM-1-10"
+  },
+  {
+   "commentaire": "Commentaire factice PMU n° 14.",
+   "num_partant": 5,
+   "rang": 14,
+   "cote_prob": "27/1",
+   "id_nav_partant": "20260915-COM-1-5"
+  },
+  {
+   "commentaire": "Commentaire factice PMU n° 15.",
+   "num_partant": 16,
+   "rang": 15,
+   "cote_prob": "16/1",
+   "id_nav_partant": "20260915-COM-1-16"
+  },
+  {
+   "commentaire": "Commentaire factice PMU n° 16.",
+   "num_partant": 13,
+   "rang": 16,
+   "cote_prob": "43/1",
+   "id_nav_partant": "20260915-COM-1-13"
+  }
+ ],
+ "signature": "DATAHIPPIQUE",
+ "source": "DATAHIPPIQUE",
+ "dateReunion": 1789423200000,
+ "numeroReunion": 1,
+ "numeroCourse": 1
+}

@@ -21,6 +21,7 @@ CREATE TABLE IF NOT EXISTS courses (
     is_quinte      INTEGER NOT NULL DEFAULT 0,
     statut         TEXT,
     arrivee        TEXT,                    -- "7-8-6-4-12", NULL until official
+    externes_ok    INTEGER NOT NULL DEFAULT 0,  -- third-party forecasts collected for good
     updated_at     TEXT NOT NULL
 );
 
@@ -63,12 +64,25 @@ CREATE TABLE IF NOT EXISTS rapports (
 CREATE TABLE IF NOT EXISTS pronostics (
     id_course   TEXT NOT NULL REFERENCES courses(id_course) ON DELETE CASCADE,
     numero      INTEGER NOT NULL,
-    methode     TEXT NOT NULL,              -- forme | logit
+    methode     TEXT NOT NULL,              -- forme | logit | boosting | elo | consensus
     score       REAL,
     proba       REAL,
     rang        INTEGER,
     created_at  TEXT NOT NULL,
     PRIMARY KEY (id_course, numero, methode)
+);
+
+-- Third-party rankings: PMU forecast, press, most-played bets. Only numbers
+-- and the source name are stored, never the authors' texts (copyright).
+CREATE TABLE IF NOT EXISTS selections (
+    id_course     TEXT NOT NULL REFERENCES courses(id_course) ON DELETE CASCADE,
+    source        TEXT NOT NULL,            -- stable key: pmu, presse:le-parisien, joues:TIERCE:1, ...
+    famille       TEXT NOT NULL,            -- pmu | presse | synthese | parieurs
+    libelle       TEXT NOT NULL,            -- display name
+    numeros       TEXT NOT NULL,            -- ranked runners: "6-1-4-14"
+    avant_depart  INTEGER NOT NULL,         -- 1 if collected before the start of the race
+    collected_at  TEXT NOT NULL,
+    PRIMARY KEY (id_course, source)
 );
 
 CREATE TABLE IF NOT EXISTS collect_days (

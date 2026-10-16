@@ -6,8 +6,9 @@ sans cookie, sans serveur et pour 0 €.
 
 - **Collecte** : API JSON non officielle du PMU, avec repli HTML sur turf-fr.com pour les arrivées.
 - **Stockage** : SQLite.
-- **Pronostics** : score de forme (méthode 1) et modèle logit conditionnel (méthode 2),
-  avec formule de Harville pour les ordres d'arrivée et mesure de fiabilité publiée.
+- **Pronostics** : cinq méthodes maison (score de forme, logit conditionnel, gradient boosting,
+  classement Elo, consensus de toutes les sources), le pronostic PMU, les sélections de la presse
+  (sans leurs textes) et ce que jouent les parieurs. La fiabilité de chaque source est mesurée et publiée.
 - **Publication** : site statique généré par Jinja2 et publié sur GitHub Pages.
   GitHub Actions automatise tout.
 
@@ -19,7 +20,7 @@ Détails techniques, endpoints, maintenance et zones grises juridiques : voir [D
 |---|---|
 | `index.html` | Programme du jour, Quinté+ mis en avant, filtres (hippodrome, discipline, distance), export CSV |
 | `jour/AAAA-MM-JJ.html` | Programme et arrivées d'un jour, navigation par date |
-| `course/AAAA-MM-JJ-R1C1.html` | Partants, musique, cotes, score de forme, probabilités, arrivée, rapports |
+| `course/AAAA-MM-JJ-R1C1.html` | Arrivée, tous les pronostics (avec la place obtenue par chaque cheval), partants, cotes, probabilités, rapports |
 | `archives.html` | Tous les jours collectés |
 | `fiabilite.html` | Performance réelle des pronostics et test sur l'historique, comparés au favori |
 | `methodo.html` | Méthodes, limites, sources, cadre légal |
@@ -70,6 +71,7 @@ collect/
   http_client.py     Délai entre requêtes, relances, bascule entre les deux hôtes PMU
   api_pmu.py         Endpoints programme / participants / rapports
   normalize.py       JSON PMU → lignes de la base
+  external_forecasts.py  Pronostics PMU, presse et plus joués → classements (sans textes)
   scraper.py         Repli HTML (arrivées) sur turf-fr.com
   pipeline.py        Orchestration d'une journée de collecte
 db/
@@ -80,10 +82,14 @@ predict/
   features.py        Critères par partant, sans fuite d'information
   form_score.py      Méthode 1 : score de forme
   logit_model.py     Méthode 2 : logit conditionnel en deux étapes
+  boosting.py        Méthode 3 : gradient boosting (scikit-learn)
+  elo.py             Méthode 4 : classement Elo cheval et driver
+  consensus.py       Méthode 5 : consensus de toutes les sources
+  sources.py         Toutes les sources sous une forme commune
   harville.py        Probabilités d'ordre d'arrivée
   backtest.py        Mesures de fiabilité
   train.py           Entraînement et backtest
-  forecast.py        Pronostics du jour (figés au départ)
+  forecast.py        Pronostics maison du jour (figés au départ)
 site_builder/
   builder.py         Génération des pages
   views.py           Préparation des données pour les modèles

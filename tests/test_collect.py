@@ -65,3 +65,42 @@ def test_scraper_parses_recorded_pages():
     assert links and all("/arrivees-rapports/" in link for link in links)
     parsed = scraper.parse_arrival_page((FIXTURES / "turffr_arrivee.html").read_text(encoding="utf-8"))
     assert parsed == (date(2026, 10, 16), 1, 6, "8-11-9-12-17")
+
+
+def test_external_forecasts_stored_without_texts(filled_conn):
+    rows = {r["source"]: r for r in repo.selections_for_course(filled_conn, "2026-09-15-R1C1")}
+    assert rows["pmu"]["numeros"].startswith("7-8-1-6-4")
+    assert rows["presse:le-parisien"]["numeros"] == "4-6-7-1-5-9-3-8"
+    assert rows["synthese:FAVORIS"]["numeros"].startswith("6-1-4")
+    assert rows["joues"]["famille"] == "parieurs"
+    assert {"joues:TIERCE:1", "joues:QUARTE_PLUS:1", "joues:QUINTE_PLUS:3"} <= set(rows)
+    # Collected after the race: press and PMU are flagged, bets totals are not.
+    assert rows["pmu"]["avant_depart"] == 0 and rows["joues"]["avant_depart"] == 1
+    # No journalist text is ever stored.
+    stored = " ".join(" ".join(str(v) for v in tuple(r)) for r in rows.values())
+    assert "commentaire" not in stored.lower() and len(max((r["libelle"] for r in rows.values()), key=len)) <= 60
+    assert filled_conn.execute("SELECT externes_ok FROM courses WHERE id_course='2026-09-15-R1C1'").fetchone()[0] == 1
+
+
+def test_pre_start_selection_is_frozen(conn):
+    base = {"id_course": "x", "source": "pmu", "famille": "pmu", "libelle": "PMU", "collected_at": "t"}
+    conn.execute("INSERT INTO courses (id_course, date_course, num_reunion, num_course, hippodrome, updated_at) VALUES ('x','2026-01-01',1,1,'H','t')")
+    repo.upsert_selection(conn, {**base, "numeros": "1-2-3", "avant_depart": 1})
+    repo.upsert_selection(conn, {**base, "numeros": "3-2-1", "avant_depart": 0})
+    assert repo.selections_for_course(conn, "x")[0]["numeros"] == "1-2-3"
+
+
+def test_old_database_is_migrated(tmp_path):
+    import sqlite3
+    path = tmp_path / "old.db"
+    old = sqlite3.connect(path)
+    old.executescript(
+        "CREATE TABLE courses (id_course TEXT PRIMARY KEY, date_course TEXT NOT NULL, num_reunion INTEGER NOT NULL,"
+        " num_course INTEGER NOT NULL, hippodrome TEXT NOT NULL, arrivee TEXT, updated_at TEXT NOT NULL);"
+        "CREATE TABLE collect_days (date_course TEXT PRIMARY KEY, complete INTEGER NOT NULL DEFAULT 0, updated_at TEXT NOT NULL);"
+        "INSERT INTO collect_days VALUES ('2026-09-15', 1, 't');"
+    )
+    old.close()
+    conn = repo.connect(path)
+    assert "externes_ok" in {r["name"] for r in conn.execute("PRAGMA table_info(courses)")}
+    assert not repo.day_is_complete(conn, "2026-09-15")

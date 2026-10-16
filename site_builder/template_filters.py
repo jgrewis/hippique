@@ -48,8 +48,13 @@ def cote(value) -> str:
 
 
 def pct(value, decimals=1) -> str:
-    """0.1234 -> '12,3 %'."""
-    return "–" if value is None else f"{fr_number(100 * value, decimals)} %"
+    """0.1234 -> '12,3 %'; tiny non-zero values read '< 0,1 %' rather than a misleading '0,0 %'."""
+    if value is None:
+        return "–"
+    threshold = 10 ** -decimals
+    if 0 < 100 * value < threshold:
+        return f"< {fr_number(threshold, decimals)} %"
+    return f"{fr_number(100 * value, decimals)} %"
 
 
 def euros(value) -> str:
@@ -58,6 +63,17 @@ def euros(value) -> str:
 
 def rapport(value) -> str:
     return "–" if value is None else f"{fr_number(value, 2)} €"
+
+
+def arrival_groups(arrivee) -> list:
+    """"7-8-2=14" -> [[7], [8], [2, 14]] (dead heats share a place)."""
+    if not arrivee:
+        return []
+    return [[int(n) for n in group.split("=") if n.isdigit()] for group in arrivee.split("-")]
+
+
+def ordinal(n) -> str:
+    return "1er" if n == 1 else f"{n}e"
 
 
 def bet_label(code: str) -> str:
@@ -85,5 +101,5 @@ def musique_html(value) -> Markup:
 def register(env):
     env.filters.update(
         fr_date=fr_date, fr_month=fr_month, fr_datetime_utc=fr_datetime_utc, fr_number=fr_number,
-        cote=cote, pct=pct, euros=euros, rapport=rapport, bet_label=bet_label, musique_html=musique_html,
+        cote=cote, pct=pct, arrival_groups=arrival_groups, ordinal=ordinal, euros=euros, rapport=rapport, bet_label=bet_label, musique_html=musique_html,
     )

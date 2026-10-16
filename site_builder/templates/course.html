@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "_macros.html" import bet_badges, export_button, prono_box %}
+{% from "_macros.html" import bet_badges, export_button, prono_box, picks, arrival_line %}
 {% block title %}R{{ course.num_reunion }}C{{ course.num_course }} {{ course.nom_course }} – {{ course.date_course | fr_date(false) }}{% endblock %}
 {% block content %}
 <nav class="breadcrumb" aria-label="Fil d'Ariane">
@@ -29,7 +29,37 @@
 {% if pronostic %}
   {{ prono_box(pronostic, root, course.id_course) }}
 {% elif course.arrivee %}
-  <p class="note">Pas de pronostic pour cette course : elle a été collectée après son départ.</p>
+  <p class="note">Pas de pronostic maison pour cette course : elle a été collectée après son départ.</p>
+{% endif %}
+
+{% if pronostic_groups %}
+<section aria-labelledby="sources-title">
+  <h2 id="sources-title">Tous les pronostics</h2>
+  {% if course.arrivee %}
+  <div class="arrival-ref">
+    <span class="arrival-ref-label">Arrivée officielle</span>
+    {{ arrival_line(course.arrivee) }}
+  </div>
+  {% endif %}
+  <p class="note">Les 8 premiers choix de chaque source, du premier au huitième.{% if course.arrivee %} Sous chaque numéro arrivé dans les cinq premiers figure sa place ; les numéros pleins ont fini dans le tiercé.{% endif %}
+    Comparez leur fiabilité sur la page <a href="{{ root }}fiabilite.html">Fiabilité</a>.</p>
+  {% for group in pronostic_groups %}
+  <details class="source-group" open>
+    <summary><span class="source-group-title">{{ group.title }}</span> <small>({{ group.rows | length }})</small></summary>
+    <div class="table-wrap" tabindex="0" role="region" aria-label="{{ group.title }}">
+    <table class="data-table compact source-table">
+      <caption class="sr-only">{{ group.title }}</caption>
+      <thead><tr><th scope="col">Source</th><th scope="col">Sélection</th></tr></thead>
+      <tbody>
+        {% for row in group.rows %}
+        <tr><th scope="row">{{ row.label }}</th><td>{{ picks(row.picks) }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    </div>
+  </details>
+  {% endfor %}
+</section>
 {% endif %}
 
 <section aria-labelledby="partants-title">
@@ -42,19 +72,20 @@
   <table id="partants-table" class="data-table">
     <thead>
       <tr>
-        <th scope="col" class="num">N°</th><th scope="col">Cheval</th><th scope="col">Driver / jockey</th>
+        <th scope="col" class="num">N°</th><th scope="col" class="num">Arrivée</th><th scope="col">Cheval</th><th scope="col">Driver / jockey</th>
         <th scope="col">Entraîneur</th><th scope="col">Musique</th>
         <th scope="col" class="num">Cote matin</th><th scope="col" class="num">Cote actuelle</th>
-        <th scope="col" class="num"><abbr title="Score de forme sur 100">Forme</abbr></th>
-        <th scope="col" class="num"><abbr title="Probabilité de victoire selon le modèle logit">Proba modèle</abbr></th>
         <th scope="col" class="num"><abbr title="Probabilité implicite de la cote du matin">Proba marché</abbr></th>
-        <th scope="col" class="num">Arrivée</th>
+        <th scope="col" class="num"><abbr title="Probabilité de victoire selon le modèle logit">Proba logit</abbr></th>
+        <th scope="col" class="num"><abbr title="Probabilité de victoire selon le gradient boosting">Proba boosting</abbr></th>
+        <th scope="col" class="num"><abbr title="Nombre de pronostics de presse qui citent ce cheval">Presse</abbr></th>
       </tr>
     </thead>
     <tbody>
       {% for p in partants %}
       <tr{% if p.non_partant %} class="non-partant"{% endif %}>
         <td class="num">{{ p.numero }}</td>
+        <td class="num{% if p.arrivee and p.arrivee <= 3 %} podium{% endif %}">{{ (p.arrivee | ordinal) if p.arrivee else ("NP" if p.non_partant else "–") }}</td>
         <th scope="row">{{ p.nom_cheval }}{% if p.age %} <small>{{ p.age }} ans</small>{% endif %}{% if p.non_partant %} <span class="badge">NP</span>{% endif %}
           {% if p.valeur and p.valeur >= 1.25 and not course.arrivee %}<span class="badge badge-value" title="Le modèle l'estime plus probable que sa cote ne l'indique">sous-coté</span>{% endif %}</th>
         <td>{{ p.driver_jockey or "–" }}</td>
@@ -62,10 +93,10 @@
         <td class="musique">{{ p.musique | musique_html }}</td>
         <td class="num">{{ p.cote_matin | cote }}</td>
         <td class="num">{{ p.cote_actuelle | cote }}</td>
-        <td class="num">{{ p.forme.score | fr_number(0) if p.forme else "–" }}</td>
-        <td class="num">{{ p.logit.proba | pct if p.logit else "–" }}</td>
         <td class="num">{{ p.proba_marche | pct }}</td>
-        <td class="num">{{ p.arrivee or ("NP" if p.non_partant else "–") }}</td>
+        <td class="num">{{ p.logit.proba | pct if p.logit else "–" }}</td>
+        <td class="num">{{ p.boosting.proba | pct if p.boosting else "–" }}</td>
+        <td class="num">{{ (p.citations ~ "/" ~ nb_presse) if nb_presse else "–" }}</td>
       </tr>
       {% endfor %}
     </tbody>

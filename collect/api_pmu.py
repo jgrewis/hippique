@@ -20,3 +20,15 @@ def fetch_participants(client: PmuJsonClient, day: date, reunion: int, course: i
 
 def fetch_rapports(client: PmuJsonClient, day: date, reunion: int, course: int):
     return client.get_json(f"programme/{_pmu_date(day)}/R{reunion}/C{course}/rapports-definitifs")
+
+
+def fetch_pmu_forecast(client: PmuJsonClient, day: date, reunion: int, course: int):
+    return client.get_json(f"programme/{_pmu_date(day)}/R{reunion}/C{course}/pronostics")
+
+
+def fetch_press_forecasts(client: PmuJsonClient, day: date, reunion: int, course: int):
+    return client.get_json(f"programme/{_pmu_date(day)}/R{reunion}/C{course}/pronostics-detailles")
+
+
+def fetch_most_played(client: PmuJsonClient, day: date, reunion: int, course: int):
+    return client.get_json(f"programme/{_pmu_date(day)}/R{reunion}/C{course}/combinaisons")

@@ -1,0 +1,496 @@
+{
+ "commentaire": {
+  "texte": "Texte factice.",
+  "source": "DATAHIPPIQUE"
+ },
+ "syntheses": [
+  {
+   "intitule": "FAVORIS",
+   "classement": [
+    {
+     "nbPoints": 34,
+     "numPmu": 6
+    },
+    {
+     "nbPoints": 29,
+     "numPmu": 1
+    },
+    {
+     "nbPoints": 26,
+     "numPmu": 4
+    },
+    {
+     "nbPoints": 16,
+     "numPmu": 9
+    },
+    {
+     "nbPoints": 15,
+     "numPmu": 7
+    },
+    {
+     "nbPoints": 13,
+     "numPmu": 14
+    }
+   ]
+  },
+  {
+   "intitule": "OUTSIDERS",
+   "classement": [
+    {
+     "nbPoints": 11,
+     "numPmu": 8
+    },
+    {
+     "nbPoints": 9,
+     "numPmu": 15
+    },
+    {
+     "nbPoints": 7,
+     "numPmu": 3
+    },
+    {
+     "nbPoints": 7,
+     "numPmu": 16
+    },
+    {
+     "nbPoints": 6,
+     "numPmu": 5
+    },
+    {
+     "nbPoints": 5,
+     "numPmu": 12
+    }
+   ]
+  },
+  {
+   "intitule": "DELAISSES",
+   "classement": [
+    {
+     "nbPoints": 2,
+     "numPmu": 2
+    },
+    {
+     "nbPoints": 0,
+     "numPmu": 10
+    },
+    {
+     "nbPoints": 0,
+     "numPmu": 11
+    },
+    {
+     "nbPoints": 0,
+     "numPmu": 13
+    }
+   ]
+  }
+ ],
+ "avis": [
+  {
+   "societe": "Turf-fr.com",
+   "journaliste": "Rédaction",
+   "pronostics": [
+    {
+     "numPmu": 6,
+     "nom": "MIGHTY BOY"
+    },
+    {
+     "numPmu": 1,
+     "nom": "CHESS"
+    },
+    {
+     "numPmu": 4,
+     "nom": "MAIA STAR"
+    },
+    {
+     "numPmu": 14,
+     "nom": "LIKE IT OR NOT"
+    },
+    {
+     "numPmu": 9,
+     "nom": "HAVIASSOR"
+    },
+    {
+     "numPmu": 3,
+     "nom": "A BEAUREGARD"
+    },
+    {
+     "numPmu": 15,
+     "nom": "LORENZO DE MEDICI"
+    },
+    {
+     "numPmu": 8,
+     "nom": "DEMPY"
+    },
+    {
+     "numPmu": 5,
+     "nom": "RAM SEA"
+    }
+   ]
+  },
+  {
+   "societe": "Le Parisien",
+   "journaliste": "Rédaction",
+   "pronostics": [
+    {
+     "numPmu": 4,
+     "nom": "MAIA STAR"
+    },
+    {
+     "numPmu": 6,
+     "nom": "MIGHTY BOY"
+    },
+    {
+     "numPmu": 7,
+     "nom": "MISTER GATZ"
+    },
+    {
+     "numPmu": 1,
+     "nom": "CHESS"
+    },
+    {
+     "numPmu": 5,
+     "nom": "RAM SEA"
+    },
+    {
+     "numPmu": 9,
+     "nom": "HAVIASSOR"
+    },
+    {
+     "numPmu": 3,
+     "nom": "A BEAUREGARD"
+    },
+    {
+     "numPmu": 8,
+     "nom": "DEMPY"
+    },
+    {
+     "numPmu": 2,
+     "nom": "STEP MORNING"
+    }
+   ]
+  },
+  {
+   "societe": "L'Alsace",
+   "journaliste": "Rédaction",
+   "pronostics": [
+    {
+     "numPmu": 1,
+     "nom": "CHESS"
+    },
+    {
+     "numPmu": 6,
+     "nom": "MIGHTY BOY"
+    },
+    {
+     "numPmu": 14,
+     "nom": "LIKE IT OR NOT"
+    },
+    {
+     "numPmu": 7,
+     "nom": "MISTER GATZ"
+    },
+    {
+     "numPmu": 15,
+     "nom": "LORENZO DE MEDICI"
+    },
+    {
+     "numPmu": 16,
+     "nom": "MEASTER OWEN"
+    },
+    {
+     "numPmu": 8,
+     "nom": "DEMPY"
+    },
+    {
+     "numPmu": 4,
+     "nom": "MAIA STAR"
+    },
+    {
+     "numPmu": 2,
+     "nom": "STEP MORNING"
+    }
+   ]
+  },
+  {
+   "societe": "Turfomania",
+   "journaliste": "Rédaction",
+   "pronostics": [
+    {
+     "numPmu": 6,
+     "nom": "MIGHTY BOY"
+    },
+    {
+     "numPmu": 4,
+     "nom": "MAIA STAR"
+    },
+    {
+     "numPmu": 9,
+     "nom": "HAVIASSOR"
+    },
+    {
+     "numPmu": 1,
+     "nom": "CHESS"
+    },
+    {
+     "numPmu": 12,
+     "nom": "SAPRISTI"
+    },
+    {
+     "numPmu": 8,
+     "nom": "DEMPY"
+    },
+    {
+     "numPmu": 16,
+     "nom": "MEASTER OWEN"
+    },
+    {
+     "numPmu": 7,
+     "nom": "MISTER GATZ"
+    },
+    {
+     "numPmu": 15,
+     "nom": "LORENZO DE MEDICI"
+    }
+   ]
+  },
+  {
+   "societe": "Experts Equidia",
+   "journaliste": "Hervé Engel - Frédéric Hawas",
+   "pronostics": [
+    {
+     "numPmu": 7,
+     "nom": "MISTER GATZ"
+    },
+    {
+     "numPmu": 4,
+     "nom": "MAIA STAR"
+    }
+   ]
+  },
+  {
+   "societe": "Experts Equidia",
+   "journaliste": "Abdelhak Mozaachi - Jérémy Lévy",
+   "pronostics": [
+    {
+     "numPmu": 7,
+     "nom": "MISTER GATZ"
+    },
+    {
+     "numPmu": 6,
+     "nom": "MIGHTY BOY"
+    }
+   ]
+  },
+  {
+   "societe": "Experts Equidia",
+   "journaliste": "Guillaume Luyckx - Charly Milpied",
+   "pronostics": [
+    {
+     "numPmu": 7,
+     "nom": "MISTER GATZ"
+    },
+    {
+     "numPmu": 4,
+     "nom": "MAIA STAR"
+    }
+   ]
+  },
+  {
+   "societe": "Experts Equidia",
+   "journaliste": "Cédric Yetta - Jean-Philippe Cherruau",
+   "pronostics": [
+    {
+     "numPmu": 9,
+     "nom": "HAVIASSOR"
+    },
+    {
+     "numPmu": 7,
+     "nom": "MISTER GATZ"
+    }
+   ]
+  },
+  {
+   "societe": "Experts Equidia",
+   "journaliste": "Jordan Philippy - Olivier Pivain",
+   "pronostics": [
+    {
+     "numPmu": 7,
+     "nom": "MISTER GATZ"
+    },
+    {
+     "numPmu": 1,
+     "nom": "CHESS"
+    }
+   ]
+  },
+  {
+   "societe": "Experts Equidia",
+   "journaliste": "Etienne Armand - Pierre-Michel Rimbert",
+   "pronostics": [
+    {
+     "numPmu": 7,
+     "nom": "MISTER GATZ"
+    },
+    {
+     "numPmu": 4,
+     "nom": "MAIA STAR"
+    }
+   ]
+  },
+  {
+   "societe": "Experts Equidia",
+   "journaliste": "Léo Ganne - Dylan Venet",
+   "pronostics": [
+    {
+     "numPmu": 4,
+     "nom": "MAIA STAR"
+    },
+    {
+     "numPmu": 7,
+     "nom": "MISTER GATZ"
+    }
+   ]
+  },
+  {
+   "societe": "Experts Equidia",
+   "journaliste": "Daniel Madar - Julien Quoniam",
+   "pronostics": [
+    {
+     "numPmu": 6,
+     "nom": "MIGHTY BOY"
+    },
+    {
+     "numPmu": 4,
+     "nom": "MAIA STAR"
+    }
+   ]
+  },
+  {
+   "societe": "Experts Equidia",
+   "journaliste": "Tanguy Bernier - Emmanuel Rivron",
+   "pronostics": [
+    {
+     "numPmu": 4,
+     "nom": "MAIA STAR"
+    },
+    {
+     "numPmu": 1,
+     "nom": "CHESS"
+    }
+   ]
+  },
+  {
+   "societe": "Experts Equidia",
+   "journaliste": "Freddy Boersch - Michaël Bridault",
+   "pronostics": [
+    {
+     "numPmu": 7,
+     "nom": "MISTER GATZ"
+    },
+    {
+     "numPmu": 6,
+     "nom": "MIGHTY BOY"
+    }
+   ]
+  }
+ ],
+ "cribles": [
+  {
+   "numPmu": 1,
+   "nom": "CHESS",
+   "commentaire": "Texte factice.",
+   "partant": true
+  },
+  {
+   "numPmu": 2,
+   "nom": "STEP MORNING",
+   "commentaire": "Texte factice.",
+   "partant": true
+  },
+  {
+   "numPmu": 3,
+   "nom": "A BEAUREGARD",
+   "commentaire": "Texte factice.",
+   "partant": true
+  },
+  {
+   "numPmu": 4,
+   "nom": "MAIA STAR",
+   "commentaire": "Texte factice.",
+   "partant": true
+  },
+  {
+   "numPmu": 5,
+   "nom": "RAM SEA",
+   "commentaire": "Texte factice.",
+   "partant": true
+  },
+  {
+   "numPmu": 6,
+   "nom": "MIGHTY BOY",
+   "commentaire": "Texte factice.",
+   "partant": true
+  },
+  {
+   "numPmu": 7,
+   "nom": "MISTER GATZ",
+   "commentaire": "Texte factice.",
+   "partant": true
+  },
+  {
+   "numPmu": 8,
+   "nom": "DEMPY",
+   "commentaire": "Texte factice.",
+   "partant": true
+  },
+  {
+   "numPmu": 9,
+   "nom": "HAVIASSOR",
+   "commentaire": "Texte factice.",
+   "partant": true
+  },
+  {
+   "numPmu": 10,
+   "nom": "MONEY TIME",
+   "commentaire": "Texte factice.",
+   "partant": true
+  },
+  {
+   "numPmu": 11,
+   "nom": "AVANT L'ORAGE",
+   "commentaire": "Texte factice.",
+   "partant": true
+  },
+  {
+   "numPmu": 12,
+   "nom": "SAPRISTI",
+   "commentaire": "Texte factice.",
+   "partant": true
+  },
+  {
+   "numPmu": 13,
+   "nom": "SPRING EVE",
+   "commentaire": "Texte factice.",
+   "partant": true
+  },
+  {
+   "numPmu": 14,
+   "nom": "LIKE IT OR NOT",
+   "commentaire": "Texte factice.",
+   "partant": true
+  },
+  {
+   "numPmu": 15,
+   "nom": "LORENZO DE MEDICI",
+   "commentaire": "Texte factice.",
+   "partant": true
+  },
+  {
+   "numPmu": 16,
+   "nom": "MEASTER OWEN",
+   "commentaire": "Texte factice.",
+   "partant": true
+  }
+ ],
+ "quinte": true
+}

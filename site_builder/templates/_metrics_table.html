@@ -1,10 +1,10 @@
-{# Expects: metrics (dict from predict.backtest.evaluate), caption #}
+{# Expects: metrics (predict.backtest.evaluate output passed through views.with_groups), caption #}
 <div class="table-wrap" tabindex="0" role="region" aria-label="{{ caption }}">
 <table class="data-table">
   <caption>{{ caption }}</caption>
   <thead>
     <tr>
-      <th scope="col">Méthode</th>
+      <th scope="col">Source</th>
       <th scope="col" class="num">Courses</th>
       <th scope="col" class="num">1er choix gagnant</th>
       <th scope="col" class="num">Chevaux du top 3 dans le tiercé (sur 3)</th>
@@ -12,11 +12,12 @@
       <th scope="col" class="num">Gain/perte simple gagnant</th>
     </tr>
   </thead>
+  {% for family, rows in metrics.groupes %}
   <tbody>
-    {% for key in ["logit", "forme", "favori"] if key in metrics %}
-    {% set m = metrics[key] %}
-    <tr>
-      <th scope="row">{{ m.label }}</th>
+    <tr class="group-row"><th colspan="6" scope="colgroup">{{ family }}</th></tr>
+    {% for m in rows %}
+    <tr{% if not m.suffisant %} class="muted"{% endif %}>
+      <th scope="row">{{ m.label }}{% if not m.suffisant %} <small>(trop peu de courses)</small>{% endif %}</th>
       <td class="num">{{ m.courses }}</td>
       <td class="num">{{ m.gagnant_pct | fr_number }} %</td>
       <td class="num">{{ m.top3_moyen | fr_number(2) }}</td>
@@ -25,9 +26,16 @@
         {{ (m.roi_simple_gagnant_pct | fr_number) ~ " %" if m.roi_simple_gagnant_pct is not none else "–" }}</td>
     </tr>
     {% endfor %}
-    {% if metrics.hasard_gagnant_pct is defined %}
-    <tr class="muted"><th scope="row">Hasard (référence)</th><td></td><td class="num">{{ metrics.hasard_gagnant_pct | fr_number }} %</td><td></td><td></td><td></td></tr>
-    {% endif %}
   </tbody>
+  {% endfor %}
+  {% if metrics.hasard_gagnant_pct is not none %}
+  <tbody>
+    <tr class="muted"><th scope="row">Hasard (référence)</th><td></td><td class="num">{{ metrics.hasard_gagnant_pct | fr_number }} %</td><td></td><td></td><td></td></tr>
+  </tbody>
+  {% endif %}
 </table>
 </div>
+{% if metrics.log_loss %}
+<p class="note">Qualité des probabilités (perte logarithmique, plus bas = mieux) :
+  {% for label, value in metrics.log_loss.items() %}{{ label }} {{ value | fr_number(3) }}{% if not loop.last %} · {% endif %}{% endfor %}.</p>
+{% endif %}

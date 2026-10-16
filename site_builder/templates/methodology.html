@@ -42,6 +42,43 @@
     cette course. Les pronostics sont figés au départ et ne sont jamais modifiés ensuite.</p>
 </section>
 
+<section class="prose" aria-labelledby="m3">
+  <h2 id="m3">Méthode 3 : gradient boosting</h2>
+  <p>Une méthode d'apprentissage automatique (scikit-learn). Elle utilise les mêmes critères que le logit, plus la cote
+    du matin, et assemble des centaines de petits arbres de décision. Elle peut ainsi repérer des combinaisons de
+    critères qu'un modèle linéaire ne voit pas : par exemple, un bon driver qui compte surtout sur une distance donnée.
+    Elle est réentraînée à chaque collecte sur tout l'historique disponible avant la course.</p>
+</section>
+
+<section class="prose" aria-labelledby="m4">
+  <h2 id="m4">Méthode 4 : classement Elo</h2>
+  <p>Le principe du classement des joueurs d'échecs, appliqué aux chevaux et aux drivers ou jockeys. Après chaque course,
+    chaque partant « bat » ceux qu'il devance et gagne des points, d'autant plus que ses adversaires étaient bien cotés.
+    Le classement combine l'Elo du cheval et la moitié de celui du driver. L'Elo sert aussi de critère au logit et au boosting.</p>
+</section>
+
+<section class="prose" aria-labelledby="m5">
+  <h2 id="m5">Méthode 5 : consensus de toutes les sources</h2>
+  <p>Chaque source attribue 8 points à son premier choix, 7 au deuxième, et ainsi de suite jusqu'au huitième.
+    Les points sont d'abord moyennés au sein de chaque famille (méthodes maison, PMU, presse, parieurs), puis les quatre
+    familles sont additionnées à poids égal. Quinze journaux ne pèsent donc pas plus que le PMU ou que l'argent des parieurs.</p>
+</section>
+
+<section class="prose" aria-labelledby="external">
+  <h2 id="external">Sources externes</h2>
+  <ul>
+    <li><strong>PMU</strong> : le pronostic officiel publié par le PMU (source Datahippique).</li>
+    <li><strong>Presse et experts</strong> : la sélection de chaque média ou expert relayée par le PMU, et leur synthèse
+      favoris, outsiders et délaissés. Seuls le nom de la source et ses numéros sont repris, jamais les textes des
+      journalistes, qui sont protégés par le droit d'auteur.</li>
+    <li><strong>Parieurs</strong> : le favori des cotes du matin, les chevaux les plus joués en simple gagnant, et les
+      combinaisons les plus jouées en Tiercé, Quarté+ et Quinté+.</li>
+  </ul>
+  <p>Pour mesurer honnêtement la fiabilité de la presse et du PMU, seules les sélections enregistrées <em>avant</em>
+    le départ comptent dans les résultats réels. Les montants misés, eux, sont figés au départ par nature.
+    Ces sources ne sont disponibles que sur une quarantaine de jours d'historique.</p>
+</section>
+
 <section class="prose" aria-labelledby="limits">
   <h2 id="limits">Limites</h2>
   <ul>

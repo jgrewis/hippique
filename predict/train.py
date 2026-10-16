@@ -9,7 +9,7 @@ from datetime import date, timedelta
 
 import config
 from db import repository as repo
-from predict import backtest, logit_model
+from predict import backtest, boosting, logit_model, sources
 from predict.features import build_races
 
 log = logging.getLogger("train")
@@ -34,12 +34,17 @@ def main():
         cut = int(len(races) * 0.8)
         train_set, test_set = races[:cut], races[cut:]
 
-    bt_model = logit_model.train(train_set)
+    bt_logit = logit_model.train(train_set)
+    bt_boost = boosting.train(train_set)
     payouts = backtest.winning_payouts(conn)
-    entries = []
-    for race in test_set:
-        ranks, probas = backtest.rankings(race, bt_model)
-        entries.append({"rankings": ranks, "probas": probas, "arrivee": race.arrivee, "rapport_gagnant": payouts.get(race.id_course)})
+    selections = repo.all_selections(conn)
+    entries = [
+        backtest.entry(
+            sources.all_rankings(race, bt_logit, bt_boost, selections.get(race.id_course, [])),
+            race.arrivee, payouts.get(race.id_course), len(race.numeros),
+        )
+        for race in test_set
+    ]
 
     final_model = logit_model.train(races)
     config.MODEL_PATH.write_text(final_model.to_json(), encoding="utf-8")

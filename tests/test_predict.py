@@ -3,7 +3,7 @@ import math
 import numpy as np
 import pytest
 
-from predict import backtest, form_score, harville, musique
+from predict import backtest, boosting, consensus, elo, form_score, harville, musique, sources
 from predict.features import FEATURES, Race, build_races
 from predict.logit_model import LogitModel, train
 
@@ -59,16 +59,61 @@ def test_form_score_range_and_order():
     assert scores[best] == scores.max()
 
 
+def _ranking(key, numeros, family="maison"):
+    return sources.SourceRanking(key, key, family, numeros)
+
+
 def test_evaluate_metrics():
+    arrival = {1: 1, 2: 2, 3: 3}
     entries = [
-        {"rankings": {"forme": [1, 2, 3, 4]}, "probas": {}, "arrivee": {1: 1, 2: 2, 3: 3}, "rapport_gagnant": 3.0},
-        {"rankings": {"forme": [4, 3, 2, 1]}, "probas": {}, "arrivee": {1: 1, 2: 2, 3: 3}, "rapport_gagnant": 2.0},
+        backtest.entry([_ranking("forme", [1, 2, 3, 4]), _ranking("pmu", [3, 1, 2], "pmu")], arrival, 3.0, 4),
+        backtest.entry([_ranking("forme", [4, 3, 2, 1])], arrival, 2.0, 4),
     ]
-    m = backtest.evaluate(entries)["forme"]
-    assert m["gagnant_pct"] == 50.0
-    assert m["tierce_desordre_pct"] == 50.0
-    assert m["top3_moyen"] == 2.5
-    assert m["roi_simple_gagnant_pct"] == 50.0  # stake 2 €, return 3 €
+    result = backtest.evaluate(entries)
+    forme = next(s for s in result["sources"] if s["key"] == "forme")
+    assert forme["gagnant_pct"] == 50.0
+    assert forme["tierce_desordre_pct"] == 50.0
+    assert forme["top3_moyen"] == 2.5
+    assert forme["roi_simple_gagnant_pct"] == 50.0  # stake 2 €, return 3 €
+    pmu = next(s for s in result["sources"] if s["key"] == "pmu")
+    assert pmu["courses"] == 1 and not pmu["suffisant"]
+    assert result["hasard_gagnant_pct"] == 25.0
+
+
+def test_elo_rewards_winner_and_ignores_unseen():
+    book = elo.EloBook()
+    assert book.get("A") is None
+    book.update([("A", 1), ("B", 2), ("C", None)])
+    assert book.get("A") > elo.INITIAL > book.get("C")
+    assert sum(book.ratings.values()) == pytest.approx(3 * elo.INITIAL)
+
+
+def test_consensus_weights_families_equally():
+    runners = [1, 2, 3]
+    # Ten press sources for 3 must not outweigh one family each for 1.
+    rankings = {"maison": [[1, 2, 3]], "pmu": [[1, 3, 2]], "parieurs": [[1, 2, 3]], "presse": [[3, 2, 1]] * 10}
+    assert consensus.ranking(runners, rankings)[0] == 1
+
+
+def test_external_rankings_filter_and_combine():
+    rows = [
+        {"source": "pmu", "famille": "pmu", "libelle": "PMU", "numeros": "7-99-8-7", "avant_depart": 0},
+        {"source": "synthese:OUTSIDERS", "famille": "synthese", "libelle": "o", "numeros": "3", "avant_depart": 1},
+        {"source": "synthese:FAVORIS", "famille": "synthese", "libelle": "f", "numeros": "8-7", "avant_depart": 1},
+        {"source": "joues:TIERCE:1", "famille": "combinaisons", "libelle": "t", "numeros": "1-2-3", "avant_depart": 1},
+    ]
+    out = {r.key: r.numeros for r in sources.external_rankings([3, 7, 8], rows)}
+    assert out == {"pmu": [7, 8], "synthese": [8, 7, 3]}  # unknown and repeated runners dropped, combos ignored
+    only_before = {r.key for r in sources.external_rankings([3, 7, 8], rows, only_before_start=True)}
+    assert only_before == {"synthese"}
+
+
+def test_boosting_learns_and_normalises():
+    model = boosting.train(_synthetic_races())
+    race = _synthetic_races(1, seed=7)[0]
+    p = model.predict(race)
+    assert p.sum() == pytest.approx(1.0)
+    assert int(np.argmax(p)) == int(np.argmax(race.raw["forme"])) or p[int(np.argmax(race.raw["forme"]))] > 1 / len(p)
 
 
 def test_features_on_real_fixture(filled_conn):

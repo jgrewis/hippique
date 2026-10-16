@@ -7,16 +7,19 @@ Usage:
 import argparse
 import logging
 import sys
+import time
 from datetime import date, datetime, timedelta
 from zoneinfo import ZoneInfo
 
 import config
-from collect import api_pmu, scraper
+from collect import api_pmu, external_forecasts, scraper
 from collect.http_client import HttpClient, PmuJsonClient, SourceUnavailable
 from collect.normalize import normalize_course, normalize_partant, normalize_rapports
 from db import repository as repo
 
 log = logging.getLogger("collect")
+# The API stops serving press and PMU forecasts after about 40 days.
+FORECAST_HISTORY_DAYS = 40
 
 
 def today_paris() -> date:
@@ -39,6 +42,24 @@ def _fallback_arrivals(conn, http: HttpClient, day: date, run_at: str):
         repo.set_arrival(conn, f"{day.isoformat()}-R{num_reunion}C{num_course}", arrivee)
     repo.log(conn, "WARNING", f"Repli HTML utilisé : {len(arrivals)} arrivées récupérées", day.isoformat(), run_at)
     conn.commit()
+
+
+def _collect_externals(conn, pmu: PmuJsonClient, day: date, row: dict, today: date, now: str, run_at: str):
+    """Store third-party rankings. Failures are logged and never block the race itself."""
+    cid, r, c = row["id_course"], row["num_reunion"], row["num_course"]
+    before_start = row["depart_ts"] is None or time.time() * 1000 < row["depart_ts"]
+    try:
+        rows = external_forecasts.most_played_rows(cid, api_pmu.fetch_most_played(pmu, day, r, c), now)
+        if (today - day).days <= FORECAST_HISTORY_DAYS:
+            rows += external_forecasts.pmu_rows(cid, api_pmu.fetch_pmu_forecast(pmu, day, r, c), before_start, now)
+            rows += external_forecasts.press_rows(cid, api_pmu.fetch_press_forecasts(pmu, day, r, c), before_start, now)
+    except (SourceUnavailable, KeyError, TypeError, ValueError) as exc:
+        repo.log(conn, "WARNING", f"{cid} : pronostics externes indisponibles ({exc})", day.isoformat(), run_at)
+        return
+    for selection in rows:
+        repo.upsert_selection(conn, selection)
+    if repo.course_state(conn, cid) != "new":
+        repo.set_externes_ok(conn, cid)
 
 
 def collect_day(conn, http: HttpClient, day: date, run_at: str, today: date) -> dict:
@@ -66,18 +87,21 @@ def collect_day(conn, http: HttpClient, day: date, run_at: str, today: date) -> 
         for raw_course in reunion.get("courses", []):
             row = normalize_course(day, reunion, raw_course, now)
             cid = row["id_course"]
-            if repo.course_is_final(conn, cid):
+            state = repo.course_state(conn, cid)
+            if state == "final":
                 continue
             stats["courses"] += 1
             try:
-                repo.upsert_course(conn, row)
-                participants = api_pmu.fetch_participants(pmu, day, row["num_reunion"], row["num_course"])
-                for raw in participants or []:
-                    repo.upsert_partant(conn, normalize_partant(cid, raw))
-                if row["arrivee"]:
-                    rapports = api_pmu.fetch_rapports(pmu, day, row["num_reunion"], row["num_course"])
-                    if rapports:
-                        repo.replace_rapports(conn, cid, normalize_rapports(cid, rapports))
+                if state == "new":
+                    repo.upsert_course(conn, row)
+                    participants = api_pmu.fetch_participants(pmu, day, row["num_reunion"], row["num_course"])
+                    for raw in participants or []:
+                        repo.upsert_partant(conn, normalize_partant(cid, raw))
+                    if row["arrivee"]:
+                        rapports = api_pmu.fetch_rapports(pmu, day, row["num_reunion"], row["num_course"])
+                        if rapports:
+                            repo.replace_rapports(conn, cid, normalize_rapports(cid, rapports))
+                _collect_externals(conn, pmu, day, row, today, now, run_at)
             except SourceUnavailable as exc:
                 stats["errors"] += 1
                 repo.log(conn, "ERROR", f"{cid} : {exc}", iso, run_at)

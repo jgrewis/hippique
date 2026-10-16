@@ -18,8 +18,8 @@ jusqu'à 2 Go, sans historique.
 
 | Workflow | Déclenchement | Rôle |
 |---|---|---|
-| `collect.yml` | 06:00, 11:00, 18:00, 21:45 UTC + manuel | Collecte d'hier (si incomplet) et du jour, pronostics, génération et publication du site, puis complément d'historique (35 min max). |
-| `train.yml` | Lundi 04:00 UTC + manuel | Backtest, réentraînement, sauvegarde datée de la base (6 conservées), republication. |
+| `collect.yml` | 06:00, 11:00, 18:00, 21:45 UTC + manuel | Collecte d'hier (si incomplet) et du jour, pronostics, génération et publication du site, puis complément d'historique (35 min max) et recalcul du backtest. |
+| `train.yml` | Lundi 04:00 UTC + manuel | Backtest, réentraînement, sauvegarde datée de la base (6 conservées), republication, maintien des planifications. |
 
 Les deux partagent le groupe de concurrence `data`. Deux runs ne modifient donc jamais
 la base en même temps.
@@ -41,6 +41,13 @@ Deux hôtes servent la même API. Ils sont essayés dans cet ordre (`config.PMU_
 | `/programme/{JJMMAAAA}` | Réunions, courses, statut, ordre d'arrivée, paris proposés |
 | `/programme/{JJMMAAAA}/R{n}/C{m}/participants` | Partants : musique, carrière, gains, poids, cotes (`dernierRapportReference` = cote matin, `dernierRapportDirect` = dernière cote), ordre d'arrivée |
 | `/programme/{JJMMAAAA}/R{n}/C{m}/rapports-definitifs` | Rapports de tous les paris (`dividendePourUnEuro` en centimes) |
+| `/programme/{JJMMAAAA}/R{n}/C{m}/pronostics` | Pronostic officiel PMU (Datahippique) : classement des partants. Environ 40 jours d'historique. |
+| `/programme/{JJMMAAAA}/R{n}/C{m}/pronostics-detailles` | Sélections presse et experts (`avis`), synthèse favoris / outsiders / délaissés. Environ 40 jours d'historique. |
+| `/programme/{JJMMAAAA}/R{n}/C{m}/combinaisons` | Montants misés par combinaison et par pari (les plus joués). Historique long. |
+
+**Droit d'auteur** : les endpoints de pronostics contiennent aussi des commentaires rédigés
+(journalistes, PMU). Ils ne sont **jamais** stockés ni publiés : seuls le nom de la source et
+ses numéros sont conservés (`collect/external_forecasts.py`, vérifié par un test).
 
 Codes de retour : `200` données, `204` pas (encore) de données. L'ancienne adresse
 `www.pmu.fr/services/turfInfo/...` répond `403` (testé le 16/10/2026).
@@ -53,7 +60,7 @@ arrivées du jour et de la veille (balise `<input id="coursearrivee">` et titre 
 La numérotation R/C est identique à celle du PMU (vérifié).
 
 **Politesse** : 1 seconde entre deux requêtes (`PMU_DELAY`), 3 tentatives avec attente
-exponentielle. Une journée représente environ 60 à 120 requêtes.
+exponentielle. Une journée représente environ 150 à 250 requêtes (5 par course tant qu'elle n'est pas terminée et complète, plus aucune ensuite).
 
 ## 4. Schéma de la base
 
@@ -64,12 +71,18 @@ Voir `db/schema.sql`. Tables :
 | `courses` | `id_course` = `AAAA-MM-JJ-R1C1` | Une ligne par course française |
 | `partants` | (`id_course`, `numero`) | Partants, cotes, arrivée, non-partants |
 | `rapports` | (`id_course`, `type_pari`, `libelle`, `combinaison`) | Rapports pour 1 € |
-| `pronostics` | (`id_course`, `numero`, `methode`) | Pronostics figés au départ (`forme`, `logit`) |
+| `pronostics` | (`id_course`, `numero`, `methode`) | Pronostics maison figés au départ (`forme`, `logit`, `boosting`, `elo`, `consensus`) |
+| `selections` | (`id_course`, `source`) | Classements externes : PMU, presse, synthèse, plus joués. `avant_depart` = collecté avant le départ ; une sélection d'avant départ n'est jamais remplacée par une collecte postérieure. |
 | `collect_days` | `date_course` | Jour complet ou non (permet la reprise de l'historique) |
 | `collect_log` | `id` | Journal de chaque collecte (INFO / WARNING / ERROR) |
 
 Toutes les écritures sont des « upserts » : relancer une collecte ne crée jamais de doublon.
-Une course terminée (arrivée et rapports en base) n'est plus jamais redemandée.
+Une course terminée (arrivée, rapports et sources externes en base, `externes_ok = 1`) n'est plus
+jamais redemandée. Une course terminée sans sources externes ne refait que ces 3 appels.
+
+**Migrations** : `db/repository.py::_migrate` met à jour une base créée par une version antérieure
+au démarrage (ajout de `courses.externes_ok`, remise à zéro de `collect_days.complete` pour
+compléter les sources externes de l'historique).
 
 ## 5. Pronostics
 
@@ -80,9 +93,18 @@ Une course terminée (arrivée et rapports en base) n'est plus jamais redemandé
 - `predict/form_score.py` : méthode 1, poids fixes et lisibles.
 - `predict/logit_model.py` : méthode 2, logit conditionnel en deux étapes (critères, puis
   mélange avec la cote du matin), estimé par maximum de vraisemblance avec pénalité L2 (scipy).
+- `predict/elo.py` : méthode 4, Elo multi-concurrents (cheval et driver), aussi utilisé comme critère.
+- `predict/boosting.py` : méthode 3, gradient boosting scikit-learn, **réentraîné à chaque run et jamais
+  écrit sur disque** (les modèles scikit-learn se sauvegardent avec `pickle`, qui exécute du code au chargement).
+- `predict/consensus.py` : méthode 5, Borda par familles à poids égal.
+- `predict/sources.py` : toutes les sources (maison, PMU, presse, parieurs) sous une forme unique,
+  utilisée par l'affichage, le consensus et la fiabilité.
 - `predict/harville.py` : probabilités d'ordre d'arrivée.
-- `predict/train.py` : test sur les 60 derniers jours avec un modèle entraîné sur la période
-  précédente, puis réentraînement sur tout l'historique. Il faut au moins 300 courses terminées.
+- `predict/train.py` : test de toutes les sources sur les 60 derniers jours (modèles entraînés sur la
+  période précédente), puis réentraînement du logit sur tout l'historique. Il faut au moins 300 courses
+  terminées. Lancé à chaque collecte (quelques secondes). Pour les sources externes, le test historique
+  inclut des sélections collectées après coup ; seul le bilan « résultats réels » ne retient que celles
+  collectées avant le départ.
 - `predict/forecast.py` : pronostics des courses non encore parties. Ils ne sont plus jamais
   réécrits après le départ, ce qui rend honnête le bilan « Résultats réels » de la page Fiabilité.
 

@@ -13,8 +13,10 @@ from datetime import date
 import numpy as np
 
 from predict import musique
+from predict.elo import EloBook
 
-FEATURES = ("forme", "echecs", "tx_victoire", "tx_place", "gains_par_course", "driver", "entraineur", "aptitude", "poids")
+FEATURES = ("forme", "echecs", "tx_victoire", "tx_place", "gains_par_course", "driver", "entraineur", "aptitude", "poids",
+            "elo_cheval", "elo_driver")
 ROLLING_DAYS = 90
 
 
@@ -32,17 +34,22 @@ class Race:
         winners = [i for i, n in enumerate(self.numeros) if self.arrivee.get(n) == 1]
         return winners[0] if winners else None
 
-    def standardized(self, names=FEATURES) -> np.ndarray:
-        """Matrix (runners x features), z-scored within the race, missing -> 0 (race mean)."""
+    def standardized(self, names=FEATURES, keep_missing=False) -> np.ndarray:
+        """Matrix (runners x features), z-scored within the race.
+
+        Missing values become 0 (the race mean), or stay NaN with keep_missing
+        for models that handle them natively.
+        """
+        missing = np.nan if keep_missing else 0.0
         cols = []
         for name in names:
             values = np.array([np.nan if v is None else v for v in self.raw[name]], dtype=float)
             present = values[~np.isnan(values)]
             if len(present) < 2 or present.std() == 0:
-                cols.append(np.zeros(len(values)))
+                cols.append(np.where(np.isnan(values), missing, 0.0))
                 continue
             z = (values - present.mean()) / present.std()
-            cols.append(np.nan_to_num(z, nan=0.0))
+            cols.append(np.where(np.isnan(z), missing, z))
         return np.column_stack(cols)
 
 
@@ -105,6 +112,7 @@ def build_races(conn, from_date: str = None, until: str = None) -> list:
 
     drivers, trainers = _RollingRate(), _RollingRate()
     horse_history = defaultdict(list)  # horse -> [(hippodrome, distance, placed)]
+    horse_elo, driver_elo = EloBook(), EloBook()
     races = []
 
     for day in sorted(by_day):
@@ -112,22 +120,28 @@ def build_races(conn, from_date: str = None, until: str = None) -> list:
         day_races = by_day[day]
         if from_date is None or day >= from_date:
             for id_course, rows in day_races.items():
-                races.append(_race_from_rows(id_course, day, rows, ordinal, drivers, trainers, horse_history))
+                races.append(_race_from_rows(id_course, day, rows, ordinal, drivers, trainers, horse_history, horse_elo, driver_elo))
         # Update the state only after the whole day has been featurized.
         for rows in day_races.values():
             if not any(r["arrivee"] for r in rows):
                 continue
+            horse_elo.update([(_horse_key(r), r["arrivee"]) for r in rows])
+            driver_elo.update([(r["driver_jockey"], r["arrivee"]) for r in rows])
             for r in rows:
                 won = r["arrivee"] == 1
                 drivers.add(r["driver_jockey"], ordinal, won)
                 trainers.add(r["entraineur"], ordinal, won)
-                horse_history[r["id_cheval"] or r["nom_cheval"]].append(
+                horse_history[_horse_key(r)].append(
                     (r["hippodrome"], r["distance_m"], int(bool(r["arrivee"]) and r["arrivee"] <= 3))
                 )
     return races
 
 
-def _race_from_rows(id_course, day, rows, ordinal, drivers, trainers, horse_history) -> Race:
+def _horse_key(row):
+    return row["id_cheval"] or row["nom_cheval"]
+
+
+def _race_from_rows(id_course, day, rows, ordinal, drivers, trainers, horse_history, horse_elo, driver_elo) -> Race:
     raw = {name: [] for name in FEATURES}
     for r in rows:
         n = r["nb_courses"]
@@ -139,9 +153,11 @@ def _race_from_rows(id_course, day, rows, ordinal, drivers, trainers, horse_hist
         raw["gains_par_course"].append(math.log1p(gains / n) if gains is not None and n else None)
         raw["driver"].append(drivers.rate(r["driver_jockey"], ordinal))
         raw["entraineur"].append(trainers.rate(r["entraineur"], ordinal))
-        past = [h for h in horse_history.get(r["id_cheval"] or r["nom_cheval"], []) if _same_conditions(h, r["hippodrome"], r["distance_m"])]
+        past = [h for h in horse_history.get(_horse_key(r), []) if _same_conditions(h, r["hippodrome"], r["distance_m"])]
         raw["aptitude"].append(_smoothed(sum(h[2] for h in past), len(past), prior=0.3, strength=3) if past else None)
         raw["poids"].append(r["poids_kg"])
+        raw["elo_cheval"].append(horse_elo.get(_horse_key(r)))
+        raw["elo_driver"].append(driver_elo.get(r["driver_jockey"]))
     return Race(
         id_course=id_course,
         date_course=day,

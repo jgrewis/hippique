@@ -15,7 +15,18 @@ def connect(path: Path = config.DB_PATH) -> sqlite3.Connection:
     conn = sqlite3.connect(path)
     conn.row_factory = sqlite3.Row
     conn.executescript(config.SCHEMA_PATH.read_text(encoding="utf-8"))
+    _migrate(conn)
     return conn
+
+
+def _migrate(conn):
+    """Bring a database created by an older version up to the current schema."""
+    columns = {r["name"] for r in conn.execute("PRAGMA table_info(courses)")}
+    if "externes_ok" not in columns:
+        conn.execute("ALTER TABLE courses ADD COLUMN externes_ok INTEGER NOT NULL DEFAULT 0")
+        # Finished days must be revisited once to fetch the third-party forecasts.
+        conn.execute("UPDATE collect_days SET complete = 0")
+        conn.commit()
 
 
 def _upsert(conn, table: str, row: dict, keys: tuple):
@@ -65,14 +76,32 @@ def set_arrival(conn, id_course: str, arrivee: str):
     )
 
 
-def course_is_final(conn, id_course: str) -> bool:
+def course_state(conn, id_course: str) -> str:
+    """'new' (to collect fully), 'externes' (finished, third-party data missing) or 'final'."""
     row = conn.execute(
-        "SELECT c.arrivee IS NOT NULL AS has_arrival, "
+        "SELECT c.arrivee IS NOT NULL AS has_arrival, c.externes_ok, "
         "(SELECT COUNT(*) FROM rapports r WHERE r.id_course=c.id_course) AS n_rapports "
         "FROM courses c WHERE c.id_course=?",
         (id_course,),
     ).fetchone()
-    return bool(row and row["has_arrival"] and row["n_rapports"])
+    if not (row and row["has_arrival"] and row["n_rapports"]):
+        return "new"
+    return "final" if row["externes_ok"] else "externes"
+
+
+def set_externes_ok(conn, id_course: str):
+    conn.execute("UPDATE courses SET externes_ok=1 WHERE id_course=?", (id_course,))
+
+
+def upsert_selection(conn, row: dict):
+    # A ranking captured before the start is frozen: a later capture must not
+    # replace it (it would no longer prove the forecast preceded the race).
+    existing = conn.execute(
+        "SELECT avant_depart FROM selections WHERE id_course=? AND source=?", (row["id_course"], row["source"])
+    ).fetchone()
+    if existing and existing["avant_depart"] and not row["avant_depart"]:
+        return
+    _upsert(conn, "selections", row, ("id_course", "source"))
 
 
 def mark_day(conn, date_course: str, complete: bool):
@@ -121,6 +150,21 @@ def pronostics_for_course(conn, id_course: str) -> dict:
     out = {}
     for r in conn.execute("SELECT * FROM pronostics WHERE id_course=?", (id_course,)):
         out.setdefault(r["methode"], {})[r["numero"]] = r
+    return out
+
+
+def selections_for_course(conn, id_course: str) -> list:
+    return conn.execute(
+        "SELECT source, famille, libelle, numeros, avant_depart FROM selections WHERE id_course=? ORDER BY famille, libelle, source",
+        (id_course,),
+    ).fetchall()
+
+
+def all_selections(conn) -> dict:
+    """{id_course: [rows]} for every course, in one query (avoids N+1 during backtests)."""
+    out = {}
+    for r in conn.execute("SELECT id_course, source, famille, libelle, numeros, avant_depart FROM selections"):
+        out.setdefault(r["id_course"], []).append(r)
     return out
 
 
