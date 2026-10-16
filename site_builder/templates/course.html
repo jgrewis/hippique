@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% from "_macros.html" import bet_badges, export_button, prono_box %}
+{% block title %}R{{ course.num_reunion }}C{{ course.num_course }} {{ course.nom_course }} – {{ course.date_course | fr_date(false) }}{% endblock %}
+{% block content %}
+<nav class="breadcrumb" aria-label="Fil d'Ariane">
+  <a href="{{ root }}jour/{{ course.date_course }}.html">{{ course.date_course | fr_date }}</a> › R{{ course.num_reunion }}C{{ course.num_course }}
+</nav>
+<h1>R{{ course.num_reunion }}C{{ course.num_course }} · {{ course.nom_course }}</h1>
+<dl class="facts">
+  <div><dt>Hippodrome</dt><dd>{{ course.hippodrome }}</dd></div>
+  <div><dt>Départ</dt><dd>{{ course.heure_depart or "–" }}</dd></div>
+  <div><dt>Discipline</dt><dd>{{ course.discipline or "–" }}</dd></div>
+  <div><dt>Distance</dt><dd>{{ course.distance_m | fr_number(0) }}&nbsp;m</dd></div>
+  <div><dt>Partants</dt><dd>{{ course.nb_partants or "–" }}</dd></div>
+  <div><dt>Allocation</dt><dd>{{ course.montant_prix | euros }}</dd></div>
+  {% if course.terrain %}<div><dt>Terrain</dt><dd>{{ course.terrain }}</dd></div>{% endif %}
+  {% if course.paris %}<div><dt>Paris</dt><dd>{{ bet_badges(course.paris.split(",")) }}</dd></div>{% endif %}
+</dl>
+
+{% if arrival %}
+<section class="card highlight" aria-labelledby="arrivee-title">
+  <h2 id="arrivee-title">Arrivée officielle</h2>
+  <ol class="selection">
+    {% for p in arrival %}<li><span class="num">{{ p.numero }}</span> {{ p.nom_cheval }}</li>{% endfor %}
+  </ol>
+</section>
+{% endif %}
+
+{% if pronostic %}
+  {{ prono_box(pronostic, root, course.id_course) }}
+{% elif course.arrivee %}
+  <p class="note">Pas de pronostic pour cette course : elle a été collectée après son départ.</p>
+{% endif %}
+
+<section aria-labelledby="partants-title">
+  <div class="section-head">
+    <h2 id="partants-title">Partants</h2>
+    {{ export_button("partants-table", "partants-" ~ course.id_course ~ ".csv") }}
+  </div>
+  {% if partants %}
+  <div class="table-wrap" tabindex="0" role="region" aria-label="Tableau des partants">
+  <table id="partants-table" class="data-table">
+    <thead>
+      <tr>
+        <th scope="col" class="num">N°</th><th scope="col">Cheval</th><th scope="col">Driver / jockey</th>
+        <th scope="col">Entraîneur</th><th scope="col">Musique</th>
+        <th scope="col" class="num">Cote matin</th><th scope="col" class="num">Cote actuelle</th>
+        <th scope="col" class="num"><abbr title="Score de forme sur 100">Forme</abbr></th>
+        <th scope="col" class="num"><abbr title="Probabilité de victoire selon le modèle logit">Proba modèle</abbr></th>
+        <th scope="col" class="num"><abbr title="Probabilité implicite de la cote du matin">Proba marché</abbr></th>
+        <th scope="col" class="num">Arrivée</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for p in partants %}
+      <tr{% if p.non_partant %} class="non-partant"{% endif %}>
+        <td class="num">{{ p.numero }}</td>
+        <th scope="row">{{ p.nom_cheval }}{% if p.age %} <small>{{ p.age }} ans</small>{% endif %}{% if p.non_partant %} <span class="badge">NP</span>{% endif %}
+          {% if p.valeur and p.valeur >= 1.25 and not course.arrivee %}<span class="badge badge-value" title="Le modèle l'estime plus probable que sa cote ne l'indique">sous-coté</span>{% endif %}</th>
+        <td>{{ p.driver_jockey or "–" }}</td>
+        <td>{{ p.entraineur or "–" }}</td>
+        <td class="musique">{{ p.musique | musique_html }}</td>
+        <td class="num">{{ p.cote_matin | cote }}</td>
+        <td class="num">{{ p.cote_actuelle | cote }}</td>
+        <td class="num">{{ p.forme.score | fr_number(0) if p.forme else "–" }}</td>
+        <td class="num">{{ p.logit.proba | pct if p.logit else "–" }}</td>
+        <td class="num">{{ p.proba_marche | pct }}</td>
+        <td class="num">{{ p.arrivee or ("NP" if p.non_partant else "–") }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  <p class="note">Musique : la course la plus récente est à gauche. <span class="m-win">1</span> victoire,
+    <span class="m-place">2–3</span> place, <span class="m-fail">D/A/T</span> disqualifié, arrêté ou tombé, 0 = au-delà de la 9e place.
+    Lettre : a attelé, m monté, p plat, h haies, s steeple, c cross.</p>
+  {% else %}
+  <p class="empty">Partants non encore publiés.</p>
+  {% endif %}
+</section>
+
+{% if rapport_groups %}
+<section aria-labelledby="rapports-title">
+  <h2 id="rapports-title">Rapports définitifs <small>(pour 1 € misé)</small></h2>
+  <div class="rapports-grid">
+    {% for group in rapport_groups %}
+    <div class="card">
+      <h3>{{ group.type | bet_label }}</h3>
+      <table class="data-table compact">
+        <thead><tr><th scope="col">Pari</th><th scope="col">Combinaison</th><th scope="col" class="num">Rapport</th></tr></thead>
+        <tbody>
+          {% for r in group.rows %}
+          <tr><td>{{ r.libelle }}</td><td>{{ r.combinaison }}</td><td class="num">{{ r.rapport | rapport }}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+{% endblock %}
+{% block scripts %}
+<script src="{{ root }}assets/js/export-csv.js" defer></script>
+{% endblock %}

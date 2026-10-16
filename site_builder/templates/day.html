@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% from "_macros.html" import bet_badges, arrival_line, export_button, prono_box %}
+{% block title %}Programme du {{ day | fr_date }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>Programme du {{ day | fr_date }}</h1>
+  <nav class="date-nav" aria-label="Navigation par date">
+    {% if prev_day %}<a class="button" href="{{ root }}jour/{{ prev_day }}.html" rel="prev">← <span class="sr-only">Jour précédent :</span>{{ prev_day | fr_date(false) }}</a>{% endif %}
+    <form class="date-jump js-only" hidden data-root="{{ root }}">
+      <label for="date-jump">Aller au</label>
+      <input type="date" id="date-jump" min="{{ first_day }}" max="{{ last_day }}" value="{{ day }}">
+      <button type="submit" class="button">OK</button>
+    </form>
+    {% if next_day %}<a class="button" href="{{ root }}jour/{{ next_day }}.html" rel="next"><span class="sr-only">Jour suivant :</span>{{ next_day | fr_date(false) }} →</a>{% endif %}
+  </nav>
+</div>
+
+{% if quinte %}
+<section class="card highlight" aria-labelledby="quinte-title">
+  <h2 id="quinte-title">Quinté+ du jour</h2>
+  <p class="course-meta">
+    <a href="{{ root }}course/{{ quinte.id_course }}.html"><strong>{{ quinte.nom_course }}</strong></a><br>
+    {{ quinte.hippodrome }} · R{{ quinte.num_reunion }}C{{ quinte.num_course }} · {{ quinte.heure_depart or "–" }}
+    · {{ quinte.discipline }} · <span class="nowrap">{{ quinte.distance_m | fr_number(0) }}&nbsp;m</span> · {{ quinte.nb_partants }} partants
+  </p>
+  {% if quinte.arrivee %}<p>Arrivée : {{ arrival_line(quinte.arrivee) }}</p>{% endif %}
+  {{ prono_box(quinte_detail.pronostic, root, quinte.id_course) }}
+</section>
+{% endif %}
+
+{% if nb_courses %}
+<form class="filters js-only" hidden aria-label="Filtres" data-filter-table="courses-table">
+  <div class="field">
+    <label for="f-hippo">Hippodrome</label>
+    <select id="f-hippo" data-filter="hippodrome">
+      <option value="">Tous</option>
+      {% for h in hippodromes %}<option>{{ h }}</option>{% endfor %}
+    </select>
+  </div>
+  <div class="field">
+    <label for="f-disc">Discipline</label>
+    <select id="f-disc" data-filter="discipline">
+      <option value="">Toutes</option>
+      {% for d in disciplines %}<option>{{ d }}</option>{% endfor %}
+    </select>
+  </div>
+  <div class="field">
+    <label for="f-dist">Distance</label>
+    <select id="f-dist" data-filter="distance">
+      <option value="">Toutes</option>
+      {% for d in distance_buckets %}<option>{{ d }}</option>{% endfor %}
+    </select>
+  </div>
+  <div class="field field-check">
+    <input type="checkbox" id="f-quinte" data-filter="quinte" value="1">
+    <label for="f-quinte">Quinté+ seulement</label>
+  </div>
+  <button type="reset" class="button button-ghost">Réinitialiser</button>
+  <p class="filter-count" aria-live="polite"></p>
+</form>
+
+<div class="table-tools">{{ export_button("courses-table", "programme-" ~ day ~ ".csv") }}</div>
+<div class="table-wrap" tabindex="0" role="region" aria-label="Courses du jour">
+<table id="courses-table" class="data-table">
+  <caption class="sr-only">Courses du {{ day | fr_date }}</caption>
+  <thead>
+    <tr>
+      <th scope="col">Course</th><th scope="col">Heure</th><th scope="col">Nom</th><th scope="col">Hippodrome</th>
+      <th scope="col">Discipline</th><th scope="col" class="num">Distance</th><th scope="col" class="num">Partants</th>
+      <th scope="col">Paris</th><th scope="col">Arrivée</th>
+    </tr>
+  </thead>
+  {% for reunion in reunions %}
+  <tbody data-group>
+    <tr class="group-row" data-no-export><th colspan="9" scope="colgroup">R{{ reunion.num }} · {{ reunion.hippodrome }}</th></tr>
+    {% for c in reunion.courses %}
+    <tr data-hippodrome="{{ c.hippodrome }}" data-discipline="{{ c.discipline or '' }}" data-distance="{{ c.distance_bucket }}" data-quinte="{{ c.is_quinte }}">
+      <td><a href="{{ root }}course/{{ c.id_course }}.html">R{{ c.num_reunion }}C{{ c.num_course }}</a></td>
+      <td>{{ c.heure_depart or "–" }}</td>
+      <td><a href="{{ root }}course/{{ c.id_course }}.html">{{ c.nom_course }}</a></td>
+      <td>{{ c.hippodrome }}</td>
+      <td>{{ c.discipline or "–" }}</td>
+      <td class="num">{{ c.distance_m | fr_number(0) }}&nbsp;m</td>
+      <td class="num">{{ c.nb_partants or "–" }}</td>
+      <td>{{ bet_badges(c.paris_list) }}</td>
+      <td>{{ arrival_line(c.arrivee) }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+  {% endfor %}
+</table>
+</div>
+{% else %}
+<p class="empty">Aucune course française enregistrée pour cette date.</p>
+{% endif %}
+{% endblock %}
+{% block scripts %}
+<script src="{{ root }}assets/js/date-nav.js" defer></script>
+<script src="{{ root }}assets/js/filters.js" defer></script>
+<script src="{{ root }}assets/js/export-csv.js" defer></script>
+{% endblock %}

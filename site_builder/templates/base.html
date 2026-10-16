@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="referrer" content="no-referrer">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; object-src 'none'; img-src 'self' data:; style-src 'self'; script-src 'self'; base-uri 'none'; form-action 'none'">
+  <meta name="color-scheme" content="light dark">
+  <title>{% block title %}{{ site_title }}{% endblock %} · {{ site_title }}</title>
+  <meta name="description" content="{% block description %}Programme, partants, résultats et pronostics statistiques des courses PMU.{% endblock %}">
+  <link rel="icon" href="{{ root }}assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="{{ root }}assets/css/style.css">
+</head>
+<body>
+  <a class="skip-link" href="#contenu">Aller au contenu</a>
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="brand" href="{{ root }}index.html">{{ site_title }}</a>
+      <nav aria-label="Navigation principale">
+        <ul class="nav">
+          <li><a href="{{ root }}index.html"{% if active == "jour" %} aria-current="page"{% endif %}>Programme</a></li>
+          <li><a href="{{ root }}archives.html"{% if active == "archives" %} aria-current="page"{% endif %}>Archives</a></li>
+          <li><a href="{{ root }}fiabilite.html"{% if active == "fiabilite" %} aria-current="page"{% endif %}>Fiabilité</a></li>
+          <li><a href="{{ root }}methodo.html"{% if active == "methodo" %} aria-current="page"{% endif %}>Méthode</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main id="contenu" class="container">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <p>
+        {% if last_run %}
+          Dernière collecte : {{ last_run.run_at | fr_datetime_utc }}
+          {% if last_run.errors %}<span class="status status-error">{{ last_run.errors }} erreur(s)</span>
+          {% elif last_run.warnings %}<span class="status status-warning">{{ last_run.warnings }} avertissement(s)</span>
+          {% else %}<span class="status status-ok">OK</span>{% endif %}
+        {% else %}Aucune collecte enregistrée.{% endif %}
+        · Données : PMU (API non officielle). Site personnel, sans publicité ni traceur.
+      </p>
+      <p class="responsible">Les pronostics sont des estimations statistiques, sans aucune garantie de gain.
+        Jouer comporte des risques : endettement, dépendance. Appelez le 09 74 75 13 13 (appel non surtaxé).</p>
+    </div>
+  </footer>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

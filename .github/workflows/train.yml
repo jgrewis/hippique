@@ -1,0 +1,48 @@
+name: Entraînement du modèle
+
+on:
+  schedule:
+    - cron: "0 4 * * 1"   # Monday 04:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: write   # to republish the site afterwards
+
+concurrency:
+  group: data
+  cancel-in-progress: false
+
+jobs:
+  train:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: Restaurer la base
+        run: scripts/data_store.sh restore
+      - name: Entraîner et tester
+        run: python -m predict.train
+      - name: Sauvegarder modèle et base
+        run: |
+          scripts/data_store.sh save
+          scripts/data_store.sh backup 6
+      - name: Republier le site
+        env:
+          REF_NAME: ${{ github.ref_name }}   # via env, never interpolated into the script
+        run: gh workflow run collect.yml --ref "$REF_NAME"
+      # GitHub disables scheduled workflows after 60 days without a commit;
+      # re-enabling them through the API resets that counter.
+      - name: Maintenir les planifications actives
+        run: |
+          gh workflow enable collect.yml
+          gh workflow enable train.yml

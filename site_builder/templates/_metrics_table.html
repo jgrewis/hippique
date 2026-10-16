@@ -1,0 +1,33 @@
+{# Expects: metrics (dict from predict.backtest.evaluate), caption #}
+<div class="table-wrap" tabindex="0" role="region" aria-label="{{ caption }}">
+<table class="data-table">
+  <caption>{{ caption }}</caption>
+  <thead>
+    <tr>
+      <th scope="col">Méthode</th>
+      <th scope="col" class="num">Courses</th>
+      <th scope="col" class="num">1er choix gagnant</th>
+      <th scope="col" class="num">Chevaux du top 3 dans le tiercé (sur 3)</th>
+      <th scope="col" class="num">Tiercé désordre trouvé</th>
+      <th scope="col" class="num">Gain/perte simple gagnant</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for key in ["logit", "forme", "favori"] if key in metrics %}
+    {% set m = metrics[key] %}
+    <tr>
+      <th scope="row">{{ m.label }}</th>
+      <td class="num">{{ m.courses }}</td>
+      <td class="num">{{ m.gagnant_pct | fr_number }} %</td>
+      <td class="num">{{ m.top3_moyen | fr_number(2) }}</td>
+      <td class="num">{{ m.tierce_desordre_pct | fr_number }} %</td>
+      <td class="num {{ 'neg' if m.roi_simple_gagnant_pct is not none and m.roi_simple_gagnant_pct < 0 else 'pos' }}">
+        {{ (m.roi_simple_gagnant_pct | fr_number) ~ " %" if m.roi_simple_gagnant_pct is not none else "–" }}</td>
+    </tr>
+    {% endfor %}
+    {% if metrics.hasard_gagnant_pct is defined %}
+    <tr class="muted"><th scope="row">Hasard (référence)</th><td></td><td class="num">{{ metrics.hasard_gagnant_pct | fr_number }} %</td><td></td><td></td><td></td></tr>
+    {% endif %}
+  </tbody>
+</table>
+</div>

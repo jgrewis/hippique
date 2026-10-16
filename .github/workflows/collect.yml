@@ -1,0 +1,112 @@
+name: Collecte et publication
+
+on:
+  schedule:
+    # Times in UTC (Paris = UTC+2 in summer, UTC+1 in winter).
+    - cron: "0 6 * * *"     # morning: programme and morning odds
+    - cron: "0 11 * * *"    # before the Quinté+: updated odds and forecasts
+    - cron: "0 18 * * *"    # afternoon results
+    - cron: "45 21 * * *"   # evening results (night meetings)
+  workflow_dispatch:
+
+# Least privilege: nothing by default, each job asks for what it needs.
+permissions: {}
+
+concurrency:
+  group: data
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: write   # release assets holding the database
+      pages: read       # configure-pages
+    outputs:
+      collect_failed: ${{ steps.collect.outcome == 'failure' }}
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: Restaurer la base
+        run: scripts/data_store.sh restore
+      - name: Collecter
+        id: collect
+        continue-on-error: true
+        run: python -m collect.pipeline
+      - name: Pronostics du jour
+        run: python -m predict.forecast
+      - name: Sauvegarder la base
+        run: scripts/data_store.sh save
+      - id: pages
+        uses: actions/configure-pages@v5
+      - name: Générer le site
+        env:
+          SITE_BASE_PATH: ${{ steps.pages.outputs.base_path }}
+        run: python -m site_builder.builder --output output
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: output
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
+
+  # Completes the history a little at each run (days already complete are
+  # skipped, so this is a no-op once the year is collected), then trains a
+  # first model as soon as enough races exist.
+  history:
+    needs: [build, deploy]
+    if: always() && needs.build.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    permissions:
+      contents: write   # release assets holding the database
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: Restaurer la base
+        run: scripts/data_store.sh restore
+      - name: Compléter l'historique
+        continue-on-error: true
+        run: python -m scripts.backfill --days 365 --budget-minutes 35
+      - name: Premier modèle si absent
+        run: "[ -f data/model.json ] || python -m predict.train"
+      - name: Sauvegarder la base
+        run: scripts/data_store.sh save
+
+  # The site is still published with the data we have; this job only makes
+  # the run fail so that GitHub sends its failure e-mail.
+  alert:
+    needs: [build, deploy, history]
+    if: always() && needs.build.outputs.collect_failed == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          echo "::error::La collecte PMU a échoué (API indisponible ?). Voir le journal de l'étape « Collecter »."
+          exit 1

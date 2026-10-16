@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Archives{% endblock %}
+{% block content %}
+<h1>Archives</h1>
+{% if months %}
+  {% for m in months %}
+  <section class="card" aria-labelledby="m-{{ m.month }}">
+    <h2 id="m-{{ m.month }}">{{ m.month | fr_month }}</h2>
+    <ul class="day-list">
+      {% for d in m.days %}
+      <li>
+        <a href="{{ root }}jour/{{ d.date_course }}.html">{{ d.date_course | fr_date }}</a>
+        <span class="muted">{{ d.n }} courses{% if d.quinte %} · Quinté+ à {{ d.quinte }}{% endif %}</span>
+      </li>
+      {% endfor %}
+    </ul>
+  </section>
+  {% endfor %}
+{% else %}
+<p class="empty">Aucune donnée collectée pour l'instant.</p>
+{% endif %}
+{% endblock %}

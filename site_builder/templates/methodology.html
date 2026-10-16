@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}Méthode{% endblock %}
+{% block content %}
+<h1>Méthode et limites</h1>
+
+<section class="prose" aria-labelledby="sources">
+  <h2 id="sources">Sources des données</h2>
+  <p>Le programme, les partants, les cotes, les arrivées et les rapports proviennent de l'API JSON utilisée par
+    les applications PMU. Cette API n'est pas documentée publiquement. Seules les réunions françaises sont collectées,
+    quatre fois par jour, avec une seconde d'attente entre deux appels. Si l'API ne répond plus, les arrivées du jour
+    sont récupérées sur turf-fr.com en secours.</p>
+  <p>La « cote matin » est la cote de référence publiée par le PMU. La « cote actuelle » est la dernière cote relevée
+    lors de la collecte. Ce n'est pas une cote en temps réel.</p>
+</section>
+
+<section class="prose" aria-labelledby="m1">
+  <h2 id="m1">Méthode 1 : score de forme</h2>
+  <p>Chaque partant reçoit une note sur 100, calculée à partir de critères classés au sein de la course. Le meilleur
+    cheval sur un critère obtient 1, le moins bon 0. Les poids sont fixés à la main :</p>
+  <ul>
+    <li>musique récente, en donnant plus de poids aux dernières courses (35 %) ;</li>
+    <li>réussite du driver ou jockey sur 90 jours (15 %) ;</li>
+    <li>taux de places et taux de victoires en carrière (10 % chacun) ;</li>
+    <li>réussite de l'entraîneur sur 90 jours (10 %) ;</li>
+    <li>résultats passés sur le même hippodrome ou une distance proche (10 %) ;</li>
+    <li>gains par course (5 %) ;</li>
+    <li>disqualifications et chutes récentes, en pénalité (5 %).</li>
+  </ul>
+</section>
+
+<section class="prose" aria-labelledby="m2">
+  <h2 id="m2">Méthode 2 : modèle logit conditionnel</h2>
+  <p>C'est le modèle de référence de la recherche sur les courses (Bolton et Chapman, 1986 ; Benter, 1994).
+    Il apprend sur l'historique le poids de chaque critère et en tire, pour chaque course, une probabilité de victoire
+    par cheval. La somme de ces probabilités fait 100 %. Le modèle combine ensuite cette estimation avec la probabilité
+    tirée de la cote du matin, car les cotes contiennent beaucoup d'information. Un cheval marqué « sous-coté » est un
+    cheval que le modèle juge nettement plus probable que ne le dit sa cote, d'au moins 25 % de plus.</p>
+  <p>Pour le Tiercé, le Quarté et le Quinté+, les probabilités d'ordre d'arrivée sont calculées avec la formule de Harville.
+    Avec les probabilités de victoire p, la probabilité que A finisse 1er, B 2e et C 3e vaut
+    p<sub>A</sub> × p<sub>B</sub>/(1−p<sub>A</sub>) × p<sub>C</sub>/(1−p<sub>A</sub>−p<sub>B</sub>).</p>
+  <p>Le modèle est réentraîné chaque semaine. Chaque critère d'une course n'utilise que des informations connues avant
+    cette course. Les pronostics sont figés au départ et ne sont jamais modifiés ensuite.</p>
+</section>
+
+<section class="prose" aria-labelledby="limits">
+  <h2 id="limits">Limites</h2>
+  <ul>
+    <li>Le PMU garde environ 15 % des mises en simple et 25 à 35 % sur les paris combinés. Pour gagner sur la durée,
+      il faudrait battre l'ensemble des parieurs <em>et</em> cette commission. Aucun modèle simple n'y parvient de façon fiable.</li>
+    <li>Les données ignorent des éléments importants : vidéos des courses, état de santé, ferrure exacte, stratégie de course.</li>
+    <li>Les résultats passés ne garantissent pas les résultats futurs. La page <a href="{{ root }}fiabilite.html">Fiabilité</a>
+      montre ce que valent réellement ces pronostics.</li>
+  </ul>
+</section>
+
+<section class="prose" aria-labelledby="legal">
+  <h2 id="legal">Cadre et vie privée</h2>
+  <p>Ce site est personnel et non commercial. L'API PMU n'est pas officiellement ouverte et le scraping de secours reste
+    une zone grise juridique. La collecte se limite donc au strict nécessaire et espace ses requêtes. Ce site ne contient
+    ni publicité, ni cookie, ni outil de mesure d'audience, et il ne charge aucune ressource externe.</p>
+  <p>Jouer comporte des risques : endettement, dépendance. Joueurs Info Service : 09 74 75 13 13 (appel non surtaxé).</p>
+</section>
+{% endblock %}
