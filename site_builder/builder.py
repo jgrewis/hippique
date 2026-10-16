@@ -62,7 +62,8 @@ def build(conn, out: Path):
     # Home page: today if collected, otherwise the most recent day available.
     home_day = common["today"] if common["today"] in dates else (dates[-1] if dates else None)
     if home_day:
-        render("day.html", "index.html", "", "jour", home=True, **views.day_context(conn, home_day, dates))
+        render("day.html", "index.html", "", "jour", previous=views.previous_results(conn, home_day, dates),
+               **views.day_context(conn, home_day, dates))
     else:
         render("empty.html", "index.html", "", "jour")
     render("archives.html", "archives.html", "", "archives", **views.archives_context(conn))

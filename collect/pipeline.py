@@ -8,7 +8,7 @@ import argparse
 import logging
 import sys
 import time
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 
 import config
@@ -20,6 +20,11 @@ from db import repository as repo
 log = logging.getLogger("collect")
 # The API stops serving press and PMU forecasts after about 40 days.
 FORECAST_HISTORY_DAYS = 40
+# Collection runs every 20 minutes during racing hours. A race that has not
+# started is only refreshed when it is close to the start (last odds before the
+# forecasts freeze) or when its data is getting old: this keeps the load low.
+NEAR_START_MIN = 60
+REFRESH_HOURS = 3
 
 
 def today_paris() -> date:
@@ -62,6 +67,17 @@ def _collect_externals(conn, pmu: PmuJsonClient, day: date, row: dict, today: da
         repo.set_externes_ok(conn, cid)
 
 
+def _needs_refresh(conn, row: dict, now_ms: float) -> bool:
+    start = row["depart_ts"]
+    if start is None or start <= now_ms + NEAR_START_MIN * 60_000:
+        return True  # started (results pending), about to start, or unknown time
+    last = repo.course_updated_at(conn, row["id_course"])
+    if last is None:
+        return True
+    age_h = (now_ms / 1000 - datetime.strptime(last, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc).timestamp()) / 3600
+    return age_h >= REFRESH_HOURS
+
+
 def collect_day(conn, http: HttpClient, day: date, run_at: str, today: date) -> dict:
     """Collect one day. Returns {'courses': n, 'errors': n, 'source_down': bool}."""
     pmu = PmuJsonClient(http)
@@ -88,7 +104,7 @@ def collect_day(conn, http: HttpClient, day: date, run_at: str, today: date) -> 
             row = normalize_course(day, reunion, raw_course, now)
             cid = row["id_course"]
             state = repo.course_state(conn, cid)
-            if state == "final":
+            if state == "final" or (state == "new" and not _needs_refresh(conn, row, time.time() * 1000)):
                 continue
             stats["courses"] += 1
             try:

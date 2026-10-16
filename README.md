@@ -65,7 +65,8 @@ Tests :
 
 ```
 .github/workflows/
-  collect.yml        Collecte 4×/jour, pronostics, publication Pages, complément d'historique
+  collect.yml        Collecte toutes les 20 min en journée, pronostics, publication Pages
+  history.yml        La nuit : historique, backtest de toutes les sources, republication
   train.yml          Réentraînement hebdomadaire, sauvegarde datée, maintien des planifications
 collect/
   http_client.py     Délai entre requêtes, relances, bascule entre les deux hôtes PMU
@@ -112,8 +113,8 @@ config.py            Chemins, hôtes, délais
 4. Onglet **Actions** → « Collecte et publication » → **Run workflow**.
 
 Le site est alors en ligne à l'adresse `https://<utilisateur>.github.io/hippique/`.
-À chaque collecte, environ 35 minutes d'historique sont ajoutées : l'année complète
-est disponible en 2 à 3 jours. Le premier modèle logit est entraîné dès que 300 courses
+Chaque nuit, deux passages complètent l'historique (100 minutes chacun) : l'année complète
+est disponible en quelques nuits. Le premier modèle logit est entraîné dès que 300 courses
 terminées sont en base. En attendant, seul le score de forme est affiché.
 
 Pour accélérer l'historique, on peut aussi le récupérer en local (`scripts.backfill`), puis

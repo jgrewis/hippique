@@ -15,6 +15,22 @@
   </nav>
 </div>
 
+{% set previous = previous | default(none) %}
+{% if previous and previous.nb_arrivees %}
+<section class="card" aria-labelledby="previous-title">
+  <h2 id="previous-title">Résultats du {{ previous.day | fr_date }}</h2>
+  <p>Les arrivées d'aujourd'hui apparaîtront au fil des courses (mise à jour toutes les 20 minutes).
+    {{ previous.nb_arrivees }} arrivées enregistrées la veille.</p>
+  {% if previous.quinte and previous.quinte.arrivee %}
+  <div class="arrival-ref">
+    <span class="arrival-ref-label">Quinté+ · {{ previous.quinte.hippodrome }}</span>
+    {{ arrival_line(previous.quinte.arrivee) }}
+  </div>
+  {% endif %}
+  <p><a class="button button-ghost" href="{{ root }}jour/{{ previous.day }}.html">Toutes les arrivées de la veille</a></p>
+</section>
+{% endif %}
+
 {% if quinte %}
 <section class="card highlight" aria-labelledby="quinte-title">
   <h2 id="quinte-title">Quinté+ du jour</h2>

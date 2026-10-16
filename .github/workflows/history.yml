@@ -1,0 +1,49 @@
+name: Historique et entraînement
+
+# Night runs, when no race is run: completes the history (days already
+# complete are skipped, so this is quick once the year is collected), then
+# recomputes the backtest of every source and the logit model, and finally
+# republishes the site with the new reliability figures.
+on:
+  schedule:
+    - cron: "0 0 * * *"   # 01:00 or 02:00 Paris
+    - cron: "0 2 * * *"   # 03:00 or 04:00 Paris
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: data
+  cancel-in-progress: false
+
+jobs:
+  history:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    permissions:
+      contents: write   # release assets holding the database
+      actions: write    # republish the site afterwards
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: Restaurer la base
+        run: scripts/data_store.sh restore
+      - name: Compléter l'historique
+        continue-on-error: true
+        run: python -m scripts.backfill --days 365 --budget-minutes 100
+      - name: Entraîner et tester toutes les sources
+        run: python -m predict.train
+      - name: Sauvegarder la base
+        run: scripts/data_store.sh save
+      - name: Republier le site
+        env:
+          REF_NAME: ${{ github.ref_name }}
+        run: gh workflow run collect.yml --ref "$REF_NAME"

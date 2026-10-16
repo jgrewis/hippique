@@ -71,6 +71,19 @@ def day_context(conn, day: str, dates: list) -> dict:
     }
 
 
+def previous_results(conn, day: str, dates: list):
+    """Yesterday's results, shown on the home page until the first arrival of `day` is known."""
+    if any(c["arrivee"] for c in repo.courses_for_day(conn, day)) or dates.index(day) == 0:
+        return None
+    previous = dates[dates.index(day) - 1]
+    courses = repo.courses_for_day(conn, previous)
+    return {
+        "day": previous,
+        "nb_arrivees": sum(1 for c in courses if c["arrivee"]),
+        "quinte": next((dict(c) for c in courses if c["is_quinte"]), None),
+    }
+
+
 def course_context(conn, course) -> dict:
     course = dict(course)
     course["paris_list"] = _paris_list(course)

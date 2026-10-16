@@ -48,3 +48,4 @@ jobs:
         run: |
           gh workflow enable collect.yml
           gh workflow enable train.yml
+          gh workflow enable history.yml

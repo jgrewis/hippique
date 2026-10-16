@@ -1,3 +1,4 @@
+import time
 from datetime import date
 
 from collect.normalize import normalize_partant, normalize_rapports
@@ -104,3 +105,30 @@ def test_old_database_is_migrated(tmp_path):
     conn = repo.connect(path)
     assert "externes_ok" in {r["name"] for r in conn.execute("PRAGMA table_info(courses)")}
     assert not repo.day_is_complete(conn, "2026-09-15")
+
+
+def test_refresh_policy_spares_races_far_from_start(conn):
+    from collect.pipeline import _needs_refresh
+    now_ms = 1_800_000_000_000
+    row = {"id_course": "x", "depart_ts": now_ms + 5 * 3600_000}
+    assert _needs_refresh(conn, row, now_ms)  # never collected
+    conn.execute(
+        "INSERT INTO courses (id_course, date_course, num_reunion, num_course, hippodrome, updated_at) VALUES (?,?,?,?,?,?)",
+        ("x", "2027-01-15", 1, 1, "H", repo.now_iso()),
+    )
+    assert not _needs_refresh(conn, row, time.time() * 1000)            # fresh, starts in 5 h
+    assert _needs_refresh(conn, {**row, "depart_ts": time.time() * 1000 + 30 * 60_000}, time.time() * 1000)  # starts soon
+    assert _needs_refresh(conn, {**row, "depart_ts": time.time() * 1000 - 60_000}, time.time() * 1000)       # started
+
+
+def test_home_shows_previous_results_until_first_arrival(filled_conn):
+    from site_builder.views import previous_results
+    filled_conn.execute(
+        "INSERT INTO courses (id_course, date_course, num_reunion, num_course, hippodrome, updated_at) VALUES (?,?,?,?,?,?)",
+        ("2026-09-16-R1C1", "2026-09-16", 1, 1, "H", "t"),
+    )
+    dates = repo.dates_available(filled_conn)
+    previous = previous_results(filled_conn, "2026-09-16", dates)
+    assert previous["day"] == "2026-09-15" and previous["quinte"]["arrivee"] == "7-8-6-4-12"
+    filled_conn.execute("UPDATE courses SET arrivee='1-2-3' WHERE id_course='2026-09-16-R1C1'")
+    assert previous_results(filled_conn, "2026-09-16", dates) is None

@@ -18,14 +18,16 @@ jusqu'à 2 Go, sans historique.
 
 | Workflow | Déclenchement | Rôle |
 |---|---|---|
-| `collect.yml` | 06:00, 11:00, 18:00, 21:45 UTC + manuel | Collecte d'hier (si incomplet) et du jour, pronostics, génération et publication du site, puis complément d'historique (35 min max) et recalcul du backtest. |
-| `train.yml` | Lundi 04:00 UTC + manuel | Backtest, réentraînement, sauvegarde datée de la base (6 conservées), republication, maintien des planifications. |
+| `collect.yml` | 05:00 UTC, puis toutes les 20 min de 09:00 à 22:40 UTC + manuel | Collecte d'hier (si incomplète) et du jour, pronostics, génération et publication. Une course non partie n'est rechargée que si elle part dans l'heure ou si ses données ont plus de 3 h : un passage sans nouveauté ne coûte qu'une requête. Les arrivées apparaissent au plus 20 min après la course. |
+| `history.yml` | 00:00 et 02:00 UTC + manuel | Complément d'historique (100 min max par passage), recalcul du backtest de toutes les sources et du logit, puis republication. |
+| `train.yml` | Lundi 04:00 UTC + manuel | Entraînement, sauvegarde datée de la base (6 conservées), republication, maintien des planifications. |
 
-Les deux partagent le groupe de concurrence `data`. Deux runs ne modifient donc jamais
+Les trois partagent le groupe de concurrence `data`. Deux runs ne modifient donc jamais
 la base en même temps.
 
 **Alerte en cas de panne.** Si l'API PMU ne répond plus, le site est quand même publié
-avec les données disponibles, et le job `alert` fait échouer le run. GitHub envoie alors
+avec les données disponibles, et le job `alert` fait échouer le run, mais seulement pour le run
+du matin, les runs de 12 h et 18 h UTC et les lancements manuels (3 e-mails par jour au plus). GitHub envoie alors
 automatiquement un e-mail au propriétaire du dépôt (paramètre GitHub → Settings →
 Notifications → Actions, activé par défaut).
 

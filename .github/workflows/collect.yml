@@ -3,10 +3,8 @@ name: Collecte et publication
 on:
   schedule:
     # Times in UTC (Paris = UTC+2 in summer, UTC+1 in winter).
-    - cron: "0 6 * * *"     # morning: programme and morning odds
-    - cron: "0 11 * * *"    # before the Quinté+: updated odds and forecasts
-    - cron: "0 18 * * *"    # afternoon results
-    - cron: "45 21 * * *"   # evening results (night meetings)
+    - cron: "0 5 * * *"        # morning: programme, morning odds, first forecasts
+    - cron: "*/20 9-22 * * *"  # racing hours: results within 20 minutes, last odds before each start
   workflow_dispatch:
 
 # Least privilege: nothing by default, each job asks for what it needs.
@@ -19,7 +17,7 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 30
     permissions:
       contents: write   # release assets holding the database
       pages: read       # configure-pages
@@ -69,45 +67,24 @@ jobs:
       - id: deployment
         uses: actions/deploy-pages@v4
 
-  # Completes the history a little at each run (days already complete are
-  # skipped, so this is a no-op once the year is collected), then trains a
-  # first model as soon as enough races exist.
-  history:
-    needs: [build, deploy]
-    if: always() && needs.build.result == 'success'
-    runs-on: ubuntu-latest
-    timeout-minutes: 50
-    permissions:
-      contents: write   # release assets holding the database
-    env:
-      GH_TOKEN: ${{ github.token }}
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          persist-credentials: false
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-          cache: pip
-      - run: pip install -r requirements.txt
-      - name: Restaurer la base
-        run: scripts/data_store.sh restore
-      - name: Compléter l'historique
-        continue-on-error: true
-        run: python -m scripts.backfill --days 365 --budget-minutes 35
-      # Cheap (seconds): keeps the reliability page and the logit model current.
-      - name: Entraîner et tester toutes les sources
-        run: python -m predict.train
-      - name: Sauvegarder la base
-        run: scripts/data_store.sh save
-
   # The site is still published with the data we have; this job only makes
-  # the run fail so that GitHub sends its failure e-mail.
+  # the run fail so that GitHub sends its failure e-mail. With a run every
+  # 20 minutes, an outage is only reported by the morning run, the runs of
+  # 12:xx and 18:xx UTC and manual runs: at most three e-mails a day.
   alert:
-    needs: [build, deploy, history]
+    needs: [build, deploy]
     if: always() && needs.build.outputs.collect_failed == 'true'
     runs-on: ubuntu-latest
+    env:
+      EVENT: ${{ github.event_name }}
+      SCHEDULE: ${{ github.event.schedule }}
     steps:
       - run: |
+          hour=$(date -u +%H); minute=$(date -u +%M)
+          if [ "$EVENT" = schedule ] && [ "$SCHEDULE" != "0 5 * * *" ] \
+             && ! { { [ "$hour" = 12 ] || [ "$hour" = 18 ]; } && [ "$minute" -lt 20 ]; }; then
+            echo "::warning::Collecte en échec, alerte e-mail réservée aux runs de 7 h, 14 h et 20 h."
+            exit 0
+          fi
           echo "::error::La collecte PMU a échoué (API indisponible ?). Voir le journal de l'étape « Collecter »."
           exit 1

@@ -89,6 +89,11 @@ def course_state(conn, id_course: str) -> str:
     return "final" if row["externes_ok"] else "externes"
 
 
+def course_updated_at(conn, id_course: str):
+    row = conn.execute("SELECT updated_at FROM courses WHERE id_course=?", (id_course,)).fetchone()
+    return row["updated_at"] if row else None
+
+
 def set_externes_ok(conn, id_course: str):
     conn.execute("UPDATE courses SET externes_ok=1 WHERE id_course=?", (id_course,))
 
