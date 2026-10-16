@@ -149,6 +149,7 @@ small { color: var(--muted); font-weight: normal; }
 .note { color: var(--muted); }
 .muted { color: var(--muted); }
 .nowrap { white-space: nowrap; }
+.actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
 .empty { padding: var(--space-4); background: var(--surface); border: 1px dashed var(--border-strong); border-radius: var(--radius); color: var(--muted); }
 .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); padding: var(--space-3); margin: var(--space-3) 0; }
 .card h2 { margin-top: 0; }
