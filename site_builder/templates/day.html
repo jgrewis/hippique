@@ -1,17 +1,17 @@
 {% extends "base.html" %}
-{% from "_macros.html" import bet_badges, arrival_line, export_button, prono_box %}
+{% from "_macros.html" import bet_badges, discipline_badge, arrival_line, export_button, prono_box %}
 {% block title %}Programme du {{ day | fr_date }}{% endblock %}
 {% block content %}
 <div class="page-head">
   <h1>Programme du {{ day | fr_date }}</h1>
   <nav class="date-nav" aria-label="Navigation par date">
-    {% if prev_day %}<a class="button" href="{{ root }}jour/{{ prev_day }}.html" rel="prev">← <span class="sr-only">Jour précédent :</span>{{ prev_day | fr_date(false) }}</a>{% endif %}
+    {% if prev_day %}<a class="button button-ghost" href="{{ root }}jour/{{ prev_day }}.html" rel="prev">← <span class="sr-only">Jour précédent :</span>{{ prev_day | fr_date(false) }}</a>{% endif %}
     <form class="date-jump js-only" hidden data-root="{{ root }}">
       <label for="date-jump">Aller au</label>
       <input type="date" id="date-jump" min="{{ first_day }}" max="{{ last_day }}" value="{{ day }}" required>
       <button type="submit" class="button">OK</button>
     </form>
-    {% if next_day %}<a class="button" href="{{ root }}jour/{{ next_day }}.html" rel="next"><span class="sr-only">Jour suivant :</span>{{ next_day | fr_date(false) }} →</a>{% endif %}
+    {% if next_day %}<a class="button button-ghost" href="{{ root }}jour/{{ next_day }}.html" rel="next"><span class="sr-only">Jour suivant :</span>{{ next_day | fr_date(false) }} →</a>{% endif %}
   </nav>
 </div>
 
@@ -32,21 +32,27 @@
 {% endif %}
 
 {% if quinte %}
-<section class="card highlight" aria-labelledby="quinte-title">
-  <h2 id="quinte-title">Quinté+ du jour</h2>
-  <p class="course-meta">
-    <a href="{{ root }}course/{{ quinte.id_course }}.html"><strong>{{ quinte.nom_course }}</strong></a><br>
-    {{ quinte.hippodrome }} · R{{ quinte.num_reunion }}C{{ quinte.num_course }} · {{ quinte.heure_depart or "–" }}
-    · {{ quinte.discipline }} · <span class="nowrap">{{ quinte.distance_m | fr_number(0) }}&nbsp;m</span> · {{ quinte.nb_partants }} partants
-  </p>
-  {% if quinte.arrivee %}
-  <div class="arrival-ref">
-    <span class="arrival-ref-label">Arrivée officielle</span>
-    {{ arrival_line(quinte.arrivee) }}
+<section class="hero-card" aria-labelledby="quinte-title">
+  <div>
+    <p class="hero-kicker">Quinté+ du jour</p>
+    <h2 class="hero-title" id="quinte-title"><a href="{{ root }}course/{{ quinte.id_course }}.html">{{ quinte.nom_course }}</a></h2>
+    <p class="hero-meta">
+      {{ quinte.hippodrome }} · R{{ quinte.num_reunion }}C{{ quinte.num_course }} · {{ quinte.heure_depart or "–" }}
+      · {{ discipline_badge(quinte.discipline) }} · <span class="nowrap">{{ quinte.distance_m | fr_number(0) }}&nbsp;m</span> · {{ quinte.nb_partants }} partants
+    </p>
+    <a class="button button-secondary" href="{{ root }}course/{{ quinte.id_course }}.html">Voir la course</a>
   </div>
-  {% endif %}
-  {{ prono_box(quinte_detail.pronostic, root, quinte.id_course) }}
+  <div class="hero-result">
+    {% if quinte.arrivee %}
+    <p class="hero-kicker">Arrivée</p>
+    {{ arrival_line(quinte.arrivee) }}
+    {% else %}
+    <p class="hero-kicker">Départ</p>
+    <p class="hero-start">{{ quinte.heure_depart or "à venir" }}</p>
+    {% endif %}
+  </div>
 </section>
+{{ prono_box(quinte_detail.pronostic, root, quinte.id_course) }}
 {% endif %}
 
 {% if nb_courses %}
@@ -93,15 +99,15 @@
   </thead>
   {% for reunion in reunions %}
   <tbody data-group>
-    <tr class="group-row" data-no-export><th colspan="9" scope="colgroup">R{{ reunion.num }} · {{ reunion.hippodrome }}</th></tr>
+    <tr class="group-row" data-no-export><th colspan="9" scope="colgroup"><span class="group-label">R{{ reunion.num }} · {{ reunion.hippodrome }}</span></th></tr>
     {% for c in reunion.courses %}
     <tr data-hippodrome="{{ c.hippodrome }}" data-discipline="{{ c.discipline or '' }}" data-distance="{{ c.distance_bucket }}" data-quinte="{{ c.is_quinte }}">
-      <td><a href="{{ root }}course/{{ c.id_course }}.html">R{{ c.num_reunion }}C{{ c.num_course }}</a></td>
+      <td><a class="course-code" href="{{ root }}course/{{ c.id_course }}.html">R{{ c.num_reunion }}C{{ c.num_course }}</a></td>
       <td>{{ c.heure_depart or "–" }}</td>
       <td><a href="{{ root }}course/{{ c.id_course }}.html">{{ c.nom_course }}</a></td>
       <td>{{ arrival_line(c.arrivee) }}</td>
       <td>{{ c.hippodrome }}</td>
-      <td>{{ c.discipline or "–" }}</td>
+      <td>{{ discipline_badge(c.discipline) }}</td>
       <td class="num">{{ c.distance_m | fr_number(0) }}&nbsp;m</td>
       <td class="num">{{ c.nb_partants or "–" }}</td>
       <td>{{ bet_badges(c.paris_list) }}</td>

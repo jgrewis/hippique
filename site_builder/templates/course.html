@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "_macros.html" import bet_badges, export_button, prono_box, picks, arrival_line %}
+{% from "_macros.html" import bet_badges, discipline_badge, proba, export_button, prono_box, picks, arrival_line %}
 {% block title %}R{{ course.num_reunion }}C{{ course.num_course }} {{ course.nom_course }} – {{ course.date_course | fr_date(false) }}{% endblock %}
 {% block content %}
 <nav class="breadcrumb" aria-label="Fil d'Ariane">
@@ -9,7 +9,7 @@
 <dl class="facts">
   <div><dt>Hippodrome</dt><dd>{{ course.hippodrome }}</dd></div>
   <div><dt>Départ</dt><dd>{{ course.heure_depart or "–" }}</dd></div>
-  <div><dt>Discipline</dt><dd>{{ course.discipline or "–" }}</dd></div>
+  <div><dt>Discipline</dt><dd>{{ discipline_badge(course.discipline) }}</dd></div>
   <div><dt>Distance</dt><dd>{{ course.distance_m | fr_number(0) }}&nbsp;m</dd></div>
   <div><dt>Partants</dt><dd>{{ course.nb_partants or "–" }}</dd></div>
   <div><dt>Allocation</dt><dd>{{ course.montant_prix | euros }}</dd></div>
@@ -18,18 +18,20 @@
 </dl>
 
 {% if arrival %}
-<section class="card highlight" aria-labelledby="arrivee-title">
+<section class="card" aria-labelledby="arrivee-title">
   <h2 id="arrivee-title">Arrivée officielle</h2>
-  <ol class="selection">
+  <ol class="selection selection-arrival">
     {% for p in arrival %}<li><span class="num">{{ p.numero }}</span> {{ p.nom_cheval }}</li>{% endfor %}
   </ol>
 </section>
+{% else %}
+<p><span class="badge badge-status">Arrivée en attente{% if course.heure_depart %} · départ {{ course.heure_depart }}{% endif %}</span></p>
 {% endif %}
 
 {% if pronostic %}
   {{ prono_box(pronostic, root, course.id_course) }}
 {% elif course.arrivee %}
-  <p class="note">Pas de pronostic maison pour cette course : elle a été collectée après son départ.</p>
+  <p class="note"><span class="badge badge-status">Collectée après le départ</span> Pas de pronostic maison pour cette course : elle a été collectée après son départ.</p>
 {% endif %}
 
 {% if pronostic_groups %}
@@ -69,7 +71,7 @@
   </div>
   {% if partants %}
   <div class="table-wrap" tabindex="0" role="region" aria-label="Tableau des partants">
-  <table id="partants-table" class="data-table">
+  <table id="partants-table" class="data-table striped">
     <thead>
       <tr>
         <th scope="col" class="num">N°</th><th scope="col" class="num">Arrivée</th><th scope="col">Cheval</th><th scope="col">Driver / jockey</th>
@@ -86,22 +88,23 @@
       <tr{% if p.non_partant %} class="non-partant"{% endif %}>
         <td class="num">{{ p.numero }}</td>
         <td class="num{% if p.arrivee and p.arrivee <= 3 %} podium{% endif %}">{{ (p.arrivee | ordinal) if p.arrivee else ("NP" if p.non_partant else "–") }}</td>
-        <th scope="row">{{ p.nom_cheval }}{% if p.age %} <small>{{ p.age }} ans</small>{% endif %}{% if p.non_partant %} <span class="badge">NP</span>{% endif %}
+        <th scope="row">{{ p.nom_cheval }}{% if p.age %} <small>{{ p.age }} ans</small>{% endif %}{% if p.non_partant %} <span class="badge badge-status">NP</span>{% endif %}
           {% if p.valeur and p.valeur >= 1.25 and not course.arrivee %}<span class="badge badge-value" title="Le modèle l'estime plus probable que sa cote ne l'indique">sous-coté</span>{% endif %}</th>
         <td>{{ p.driver_jockey or "–" }}</td>
         <td>{{ p.entraineur or "–" }}</td>
         <td class="musique">{{ p.musique | musique_html }}</td>
         <td class="num">{{ p.cote_matin | cote }}</td>
         <td class="num">{{ p.cote_actuelle | cote }}</td>
-        <td class="num">{{ p.proba_marche | pct }}</td>
-        <td class="num">{{ p.logit.proba | pct if p.logit else "–" }}</td>
-        <td class="num">{{ p.boosting.proba | pct if p.boosting else "–" }}</td>
+        <td class="num">{{ proba(p.proba_marche, market=true) }}</td>
+        <td class="num">{{ proba(p.logit.proba if p.logit else none) }}</td>
+        <td class="num">{{ proba(p.boosting.proba if p.boosting else none) }}</td>
         <td class="num">{{ (p.citations ~ "/" ~ nb_presse) if nb_presse else "–" }}</td>
       </tr>
       {% endfor %}
     </tbody>
   </table>
   </div>
+  <p class="legend"><span>Probabilité des modèles (logit, boosting)</span> <span class="legend-market">Probabilité du marché (cote du matin)</span></p>
   <p class="note">Musique : la course la plus récente est à gauche. <span class="m-win">1</span> victoire,
     <span class="m-place">2–3</span> place, <span class="m-fail">D/A/T</span> disqualifié, arrêté ou tombé, 0 = au-delà de la 9e place.
     Lettre : a attelé, m monté, p plat, h haies, s steeple, c cross.</p>

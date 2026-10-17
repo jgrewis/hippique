@@ -14,7 +14,7 @@
   </thead>
   {% for family, rows in metrics.groupes %}
   <tbody>
-    <tr class="group-row"><th colspan="6" scope="colgroup">{{ family }}</th></tr>
+    <tr class="group-row"><th colspan="6" scope="colgroup"><span class="group-label">{{ family }}</span></th></tr>
     {% for m in rows %}
     <tr{% if not m.suffisant %} class="muted"{% endif %}>
       <th scope="row">{{ m.label }}{% if not m.suffisant %} <small>(trop peu de courses)</small>{% endif %}</th>
@@ -23,7 +23,7 @@
       <td class="num">{{ m.top3_moyen | fr_number(2) }}</td>
       <td class="num">{{ m.tierce_desordre_pct | fr_number }} %</td>
       <td class="num {{ 'neg' if m.roi_simple_gagnant_pct is not none and m.roi_simple_gagnant_pct < 0 else 'pos' }}">
-        {{ (m.roi_simple_gagnant_pct | fr_number) ~ " %" if m.roi_simple_gagnant_pct is not none else "–" }}</td>
+        {{ m.roi_simple_gagnant_pct | signed_pct }}</td>
     </tr>
     {% endfor %}
   </tbody>

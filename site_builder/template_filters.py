@@ -57,6 +57,21 @@ def pct(value, decimals=1) -> str:
     return f"{fr_number(100 * value, decimals)} %"
 
 
+def signed_pct(value) -> str:
+    """12.3 -> '+12,3 %', -4 -> '−4,0 %': the sign doubles the gain/loss colour."""
+    if value is None:
+        return "–"
+    sign = "+" if value > 0 else "−" if value < 0 else ""
+    return f"{sign}{fr_number(abs(value))} %"
+
+
+DISCIPLINE_CLASSES = {"Attelé": "trot", "Monté": "trot", "Plat": "plat", "Obstacle": "obstacle"}
+
+
+def disc_class(discipline) -> str:
+    return DISCIPLINE_CLASSES.get(discipline, "")
+
+
 def euros(value) -> str:
     return "–" if value is None else f"{fr_number(value, 0)} €"
 
@@ -102,4 +117,5 @@ def register(env):
     env.filters.update(
         fr_date=fr_date, fr_month=fr_month, fr_datetime_utc=fr_datetime_utc, fr_number=fr_number,
         cote=cote, pct=pct, arrival_groups=arrival_groups, ordinal=ordinal, euros=euros, rapport=rapport, bet_label=bet_label, musique_html=musique_html,
+        signed_pct=signed_pct, disc_class=disc_class,
     )

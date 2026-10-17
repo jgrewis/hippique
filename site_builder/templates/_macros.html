@@ -3,6 +3,16 @@
   {% for p in paris_list %}<span class="badge badge-{{ p | lower }}">{{ p | bet_label }}</span>{% if not loop.last %}<span class="sr-only">, </span>{% endif %}{% endfor %}
 {% endmacro %}
 
+{# Discipline pill: colour plus full label, never colour alone. #}
+{% macro discipline_badge(discipline) %}
+  {% if discipline %}<span class="badge disc disc-{{ discipline | disc_class }}">{{ discipline }}</span>{% else %}–{% endif %}
+{% endmacro %}
+
+{# Probability with a decorative bar (scale capped at 50 %); the printed value carries the information. #}
+{% macro proba(value, market=false) %}
+  {% if value is not none %}<span class="proba"><progress class="proba-bar{% if market %} is-market{% endif %}" max="0.5" value="{{ [value, 0.5] | min }}" aria-hidden="true"></progress>{{ value | pct }}</span>{% else %}–{% endif %}
+{% endmacro %}
+
 {# Official finish as saddle cloths, place shown above each number. Hidden dashes keep "4-11-7" for screen readers and CSV. #}
 {% macro arrival_line(arrivee) %}
   {% if arrivee %}
@@ -13,7 +23,7 @@
 {% endmacro %}
 
 {% macro export_button(table_id, filename) %}
-  <button type="button" class="button js-only" data-export-table="{{ table_id }}" data-export-filename="{{ filename }}" hidden>Exporter en CSV</button>
+  <button type="button" class="button button-ghost js-only" data-export-table="{{ table_id }}" data-export-filename="{{ filename }}" hidden>Exporter en CSV</button>
 {% endmacro %}
 
 {% macro prono_box(pronostic, root, uid) %}

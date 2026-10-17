@@ -27,7 +27,7 @@ MAX_RETRIES = 3
 COUNTRIES = {"FRA"}
 
 TIMEZONE = "Europe/Paris"
-SITE_TITLE = "Hippique"
+SITE_TITLE = "Francis Turf"
 # Absolute base path of the published site (GitHub project pages: "/<repo>/").
 # Only the 404 page needs it: every other link is relative.
 SITE_BASE_PATH = os.environ.get("SITE_BASE_PATH", "/").rstrip("/") + "/"

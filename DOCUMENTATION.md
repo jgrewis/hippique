@@ -1,4 +1,4 @@
-# Documentation technique
+# Documentation technique — Francis Turf
 
 ## 1. Vue d'ensemble
 
@@ -110,7 +110,16 @@ compléter les sources externes de l'historique).
 - `predict/forecast.py` : pronostics des courses non encore parties. Ils ne sont plus jamais
   réécrits après le départ, ce qui rend honnête le bilan « Résultats réels » de la page Fiabilité.
 
-## 6. Maintenance
+## 6. Charte graphique
+
+Le site applique la charte Francis Turf (octobre 2026). Les couleurs, espacements, rayons et ombres
+sont des variables CSS en tête de `site_builder/static/css/style.css`, reprises de `tokens.css` de la
+charte ; le thème sombre redéfinit les mêmes variables. Le thème suit `prefers-color-scheme`, la
+bascule de l'en-tête (`static/js/theme.js`) le force via `data-theme` et le mémorise dans le navigateur.
+Les polices Fraunces (600) et Inter (400, 600) sont servies depuis `static/fonts/` : aucune requête
+vers un tiers, la CSP reste limitée à `'self'`.
+
+## 7. Maintenance
 
 | Symptôme | Action |
 |---|---|
@@ -126,7 +135,7 @@ GitHub désactive les workflows planifiés d'un dépôt public après 60 jours s
 `train.yml` les réactive chaque semaine via l'API, ce qui remet ce compteur à zéro. En cas de
 désactivation malgré tout : onglet Actions → « Enable workflow ».
 
-## 7. Zones grises juridiques
+## 8. Zones grises juridiques
 
 - **API PMU** : non documentée et non ouverte officiellement. Son usage n'est ni autorisé
   ni interdit explicitement. Ce projet reste personnel, non commercial, peu fréquent

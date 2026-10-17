@@ -1,4 +1,4 @@
-# Hippique
+# Francis Turf
 
 Site personnel d'analyse des courses PMU (Tiercé, Quarté+, Quinté+) : programme du jour,
 partants, cotes, arrivées, rapports et pronostics statistiques. Sans publicité, sans traceur,
@@ -10,6 +10,10 @@ sans cookie, sans serveur et pour 0 €.
   classement Elo, consensus de toutes les sources), le pronostic PMU, les sélections de la presse
   (sans leurs textes) et ce que jouent les parieurs. La fiabilité de chaque source est mesurée et publiée.
 - **Publication** : site statique généré par Jinja2 et publié sur GitHub Pages.
+- **Charte graphique** : Francis Turf (octobre 2026), polices Fraunces et Inter hébergées avec le site
+  (licence SIL OFL, `site_builder/static/fonts/`), thème clair et sombre.
+
+Le dépôt et l'adresse du site gardent leur nom technique historique, `hippique`.
   GitHub Actions automatise tout.
 
 Détails techniques, endpoints, maintenance et zones grises juridiques : voir [DOCUMENTATION.md](DOCUMENTATION.md).
@@ -96,7 +100,7 @@ site_builder/
   views.py           Préparation des données pour les modèles
   template_filters.py Formatage français
   templates/         Modèles Jinja2
-  static/            CSS et JavaScript (filtres, export CSV, navigation par date)
+  static/            CSS, polices, JavaScript (thème, filtres, export CSV, navigation par date)
 scripts/
   backfill.py        Historique, reprise possible, limité dans le temps
   data_store.sh      Sauvegarde et restauration de la base (release GitHub « data »)

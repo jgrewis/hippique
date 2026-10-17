@@ -8,8 +8,8 @@
 
   function csvValue(text) {
     // Neutralise spreadsheet formulas (OWASP CSV injection), except plain
-    // negative numbers such as "-1,5", then quote.
-    if (/^[=+\-@\t\r|]/.test(text) && !/^-\d+(?:[.,]\d+)?(?:\s?%)?$/.test(text)) text = "'" + text;
+    // signed numbers such as "-1,5" or "+12,3 %", then quote.
+    if (/^[=+\-@\t\r|]/.test(text) && !/^[-+]\d+(?:[.,]\d+)?(?:\s?%)?$/.test(text)) text = "'" + text;
     return '"' + text.replace(/"/g, '""') + '"';
   }
 

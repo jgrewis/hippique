@@ -10,21 +10,28 @@
   <title>{% block title %}{{ site_title }}{% endblock %} · {{ site_title }}</title>
   <meta name="description" content="{% block description %}Programme, partants, résultats et pronostics statistiques des courses PMU.{% endblock %}">
   <link rel="icon" href="{{ root }}assets/favicon.svg" type="image/svg+xml">
+  <link rel="preload" href="{{ root }}assets/fonts/inter-400.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="{{ root }}assets/fonts/fraunces-600.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="{{ root }}assets/css/style.css">
+  <script src="{{ root }}assets/js/theme.js"></script>
 </head>
 <body>
   <a class="skip-link" href="#contenu">Aller au contenu</a>
-  <header class="site-header">
-    <div class="container header-inner">
+  <header class="site-header container">
+    <div class="header-inner">
       <a class="brand" href="{{ root }}index.html">{{ site_title }}</a>
       <nav aria-label="Navigation principale">
         <ul class="nav">
-          <li><a href="{{ root }}index.html"{% if active == "jour" %} aria-current="page"{% endif %}>Programme</a></li>
-          <li><a href="{{ root }}archives.html"{% if active == "archives" %} aria-current="page"{% endif %}>Archives</a></li>
-          <li><a href="{{ root }}fiabilite.html"{% if active == "fiabilite" %} aria-current="page"{% endif %}>Fiabilité</a></li>
-          <li><a href="{{ root }}methodo.html"{% if active == "methodo" %} aria-current="page"{% endif %}>Méthode</a></li>
+          <li><a class="nav-programme" href="{{ root }}index.html"{% if active == "jour" %} aria-current="page"{% endif %}>Programme</a></li>
+          <li><a class="nav-archives" href="{{ root }}archives.html"{% if active == "archives" %} aria-current="page"{% endif %}>Archives</a></li>
+          <li><a class="nav-fiabilite" href="{{ root }}fiabilite.html"{% if active == "fiabilite" %} aria-current="page"{% endif %}>Fiabilité</a></li>
+          <li><a class="nav-methode" href="{{ root }}methodo.html"{% if active == "methodo" %} aria-current="page"{% endif %}>Méthode</a></li>
         </ul>
       </nav>
+      <button type="button" class="theme-toggle" hidden>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 3v18"/><path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor"/></svg>
+        <span class="theme-label">Thème sombre</span>
+      </button>
     </div>
   </header>
 
@@ -32,19 +39,22 @@
     {% block content %}{% endblock %}
   </main>
 
-  <footer class="site-footer">
-    <div class="container">
-      <p>
+  <footer class="site-footer container">
+    <div class="footer-inner">
+      <p class="footer-collecte">
         {% if last_run %}
-          Dernière collecte : {{ last_run.run_at | fr_datetime_utc }}
-          {% if last_run.errors %}<span class="status status-error">{{ last_run.errors }} erreur(s)</span>
-          {% elif last_run.warnings %}<span class="status status-warning">{{ last_run.warnings }} avertissement(s)</span>
+          Dernière collecte : {{ last_run.run_at | fr_datetime_utc }} ·
+          {% if last_run.errors %}<span class="status status-error">en erreur ({{ last_run.errors }} erreur(s))</span>
+          {% elif last_run.warnings %}<span class="status status-warning">OK avec {{ last_run.warnings }} avertissement(s)</span>
           {% else %}<span class="status status-ok">OK</span>{% endif %}
         {% else %}Aucune collecte enregistrée.{% endif %}
         · Données : PMU (API non officielle). Site personnel, sans publicité ni traceur.
       </p>
-      <p class="responsible">Les pronostics sont des estimations statistiques, sans aucune garantie de gain.
-        Jouer comporte des risques : endettement, dépendance. Appelez le <span class="nowrap">09 74 75 13 13</span> (appel non surtaxé).</p>
+      <div class="responsible">
+        <p><strong>Les pronostics sont des estimations statistiques, sans aucune garantie de gain.</strong>
+          Jouer comporte des risques : endettement, dépendance. Joueurs Info Service, appel non surtaxé :</p>
+        <p class="helpline">09 74 75 13 13</p>
+      </div>
     </div>
   </footer>
   {% block scripts %}{% endblock %}
