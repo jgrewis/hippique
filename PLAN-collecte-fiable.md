@@ -44,9 +44,9 @@
 
 ## 8. Checklist
 - [x] `relay.sh` testé à sec (10 horaires de 05:10 à 23:59 UTC) : dans la plage → bon créneau ; hors plage → sortie. Anti-doublon : vérifié en ligne (voir recette)
-- [ ] YAML valide (`gh workflow view` sans erreur après push)
-- [ ] Un run lancé à la main enchaîne seul un run « relay » au créneau suivant
-- [ ] Pas de double chaîne quand le cron tombe en même temps
+- [x] YAML valide (lecture YAML OK, runs acceptés par GitHub)
+- [x] Un run lancé à la main enchaîne seul un run « relay » au créneau suivant (10:57 → 11:07:04 → 11:27:02 UTC)
+- [ ] Pas de double chaîne quand le cron tombe en même temps — non observé en ligne : le cron de 11:27 n'a pas démarré du tout. La logique anti-doublon est en place mais pas encore vue en action
 - [ ] Les alertes des runs relais suivent la règle des 3 e-mails par jour
 - [ ] Une arrivée de course du 17/10 apparaît sur le site moins de 30 min après la course
 - [ ] La chaîne s'arrête après 22 h 47 UTC
