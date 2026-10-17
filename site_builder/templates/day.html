@@ -4,6 +4,7 @@
 {% block content %}
 <div class="page-head">
   <h1>Programme du {{ day | fr_date }}</h1>
+  {% if nb_courses %}<a class="button mobile-only" href="#courses">Voir les courses <span aria-hidden="true">↓</span></a>{% endif %}
   <nav class="date-nav" aria-label="Navigation par date">
     {% if prev_day %}<a class="button button-ghost" href="{{ root }}jour/{{ prev_day }}.html" rel="prev">← <span class="sr-only">Jour précédent :</span>{{ prev_day | fr_date(false) }}</a>{% endif %}
     <form class="date-jump js-only" hidden data-root="{{ root }}">
@@ -56,6 +57,11 @@
 {% endif %}
 
 {% if nb_courses %}
+<section id="courses" aria-labelledby="courses-title">
+<h2 id="courses-title" class="sr-only">Courses du jour</h2>
+{# Folded on phones by fold-mobile.js; the whole block disappears while filters.js has not revealed the form. #}
+<details class="filters-fold" open data-fold-mobile>
+<summary class="button button-ghost">Filtrer les courses</summary>
 <form class="filters js-only" hidden aria-label="Filtres" data-filter-table="courses-table">
   <div class="field">
     <label for="f-hippo">Hippodrome</label>
@@ -85,38 +91,41 @@
   <button type="reset" class="button button-ghost">Réinitialiser</button>
   <p class="filter-count" aria-live="polite"></p>
 </form>
+</details>
 
 <div class="table-tools">{{ export_button("courses-table", "programme-" ~ day ~ ".csv") }}</div>
 <div class="table-wrap" tabindex="0" role="region" aria-label="Courses du jour">
-<table id="courses-table" class="data-table">
+{# Explicit roles: on phones the rows are laid out as flex cards, which drops table semantics in Safari. #}
+<table id="courses-table" class="data-table course-list" role="table">
   <caption class="sr-only">Courses du {{ day | fr_date }}</caption>
-  <thead>
-    <tr>
-      <th scope="col">Course</th><th scope="col">Heure</th><th scope="col">Nom</th><th scope="col">Arrivée</th>
-      <th scope="col">Hippodrome</th><th scope="col">Discipline</th><th scope="col" class="num">Distance</th>
-      <th scope="col" class="num">Partants</th><th scope="col">Paris</th>
+  <thead role="rowgroup">
+    <tr role="row">
+      <th role="columnheader" scope="col">Course</th><th role="columnheader" scope="col">Heure</th><th role="columnheader" scope="col">Nom</th><th role="columnheader" scope="col">Arrivée</th>
+      <th role="columnheader" scope="col">Hippodrome</th><th role="columnheader" scope="col">Discipline</th><th role="columnheader" scope="col" class="num">Distance</th>
+      <th role="columnheader" scope="col" class="num">Partants</th><th role="columnheader" scope="col">Paris</th>
     </tr>
   </thead>
   {% for reunion in reunions %}
-  <tbody data-group>
-    <tr class="group-row" data-no-export><th colspan="9" scope="colgroup"><span class="group-label">R{{ reunion.num }} · {{ reunion.hippodrome }}</span></th></tr>
+  <tbody data-group role="rowgroup">
+    <tr role="row" class="group-row" data-no-export><th role="cell" colspan="9" scope="colgroup"><span class="group-label">R{{ reunion.num }} · {{ reunion.hippodrome }}</span></th></tr>
     {% for c in reunion.courses %}
-    <tr data-hippodrome="{{ c.hippodrome }}" data-discipline="{{ c.discipline or '' }}" data-distance="{{ c.distance_bucket }}" data-quinte="{{ c.is_quinte }}">
-      <td><a class="course-code" href="{{ root }}course/{{ c.id_course }}.html">R{{ c.num_reunion }}C{{ c.num_course }}</a></td>
-      <td>{{ c.heure_depart or "–" }}</td>
-      <td><a href="{{ root }}course/{{ c.id_course }}.html">{{ c.nom_course }}</a></td>
-      <td>{{ arrival_line(c.arrivee) }}</td>
-      <td>{{ c.hippodrome }}</td>
-      <td>{{ discipline_badge(c.discipline) }}</td>
-      <td class="num">{{ c.distance_m | fr_number(0) }}&nbsp;m</td>
-      <td class="num">{{ c.nb_partants or "–" }}</td>
-      <td>{{ bet_badges(c.paris_list) }}</td>
+    <tr role="row" class="course-row" data-hippodrome="{{ c.hippodrome }}" data-discipline="{{ c.discipline or '' }}" data-distance="{{ c.distance_bucket }}" data-quinte="{{ c.is_quinte }}">
+      <td role="cell"><a class="course-code" href="{{ root }}course/{{ c.id_course }}.html">R{{ c.num_reunion }}C{{ c.num_course }}</a></td>
+      <td role="cell" class="course-time">{{ c.heure_depart or "–" }}</td>
+      <td role="cell" class="course-name"><a href="{{ root }}course/{{ c.id_course }}.html">{{ c.nom_course }}</a></td>
+      <td role="cell" class="course-arrival">{{ arrival_line(c.arrivee) }}</td>
+      <td role="cell" class="course-hippo">{{ c.hippodrome }}</td>
+      <td role="cell" class="course-meta">{{ discipline_badge(c.discipline) }}</td>
+      <td role="cell" class="num course-meta">{{ c.distance_m | fr_number(0) }}&nbsp;m</td>
+      <td role="cell" class="num course-meta course-runners">{{ c.nb_partants or "–" }}</td>
+      <td role="cell" class="course-meta course-bets">{{ bet_badges(c.paris_list) }}</td>
     </tr>
     {% endfor %}
   </tbody>
   {% endfor %}
 </table>
 </div>
+</section>
 {% else %}
 <p class="empty">Aucune course française enregistrée pour cette date.</p>
 {% endif %}
@@ -125,4 +134,5 @@
 <script src="{{ root }}assets/js/date-nav.js" defer></script>
 <script src="{{ root }}assets/js/filters.js" defer></script>
 <script src="{{ root }}assets/js/export-csv.js" defer></script>
+<script src="{{ root }}assets/js/fold-mobile.js" defer></script>
 {% endblock %}

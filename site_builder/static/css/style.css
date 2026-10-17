@@ -209,11 +209,12 @@ p { margin: 0 0 var(--space-16); }
   color: var(--primary); text-decoration: none;
 }
 .brand:hover { color: var(--primary-strong); text-decoration: none; }
-.header-inner > nav { order: 3; width: 100%; overflow-x: auto; scrollbar-width: thin; }
-.nav { display: flex; gap: var(--space-4); list-style: none; margin: 0; padding: 0; }
+/* Phones: the four entries on a 2 x 2 grid, all visible without sideways scrolling. */
+.header-inner > nav { order: 3; width: 100%; }
+.nav { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-4) var(--space-8); list-style: none; margin: 0; padding: 0; }
 .nav a {
   display: flex; align-items: center; gap: var(--space-8); min-height: var(--tap); padding: 0 var(--space-8);
-  color: var(--ink); font-size: var(--fs-body-sm); text-decoration: none; white-space: nowrap;
+  color: var(--ink); font-size: var(--fs-body); text-decoration: none; white-space: nowrap;
   box-shadow: inset 0 -3px 0 transparent; transition: box-shadow var(--ease), background-color var(--ease);
 }
 .nav a::before { content: ""; flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--dot); }
@@ -321,7 +322,22 @@ p { margin: 0 0 var(--space-16); }
 .date-jump input:focus-visible, .field select:focus-visible { border-color: var(--primary); }
 .date-jump input:disabled, .field select:disabled, .field-check input:disabled { opacity: .5; cursor: not-allowed; }
 
-.breadcrumb { margin-top: var(--space-24); font-size: var(--fs-body-sm); color: var(--ink-muted); }
+/* Race navigation: previous | next on one row and the day's programme below on phones, one row from 640px. */
+.course-nav { margin: var(--space-24) 0 0; }
+.course-nav:not(:first-child) { margin-top: var(--space-48); }
+.course-nav ul {
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-areas: "prev next" "day day";
+  gap: var(--space-8); list-style: none; margin: 0; padding: 0;
+}
+.course-nav-prev { grid-area: prev; }
+.course-nav-next { grid-area: next; }
+.course-nav-day { grid-area: day; }
+.course-nav .button { width: 100%; }
+.back-top { margin: var(--space-16) 0 0; text-align: center; }
+
+/* Race page contents: anchor pills under the title, 2 x 2 on phones, one row from 640px. */
+.page-toc ul { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-8); list-style: none; margin: 0 0 var(--space-24); padding: 0; }
+.page-toc .button { width: 100%; padding: var(--space-8) var(--space-16); }
 
 /* Carte Quinté+ */
 .hero-card {
@@ -381,17 +397,19 @@ p { margin: 0 0 var(--space-16); }
 }
 .prono { background: var(--surface); }
 
-/* All forecasts: one collapsible table per family of sources. */
+/* All forecasts: one collapsible table per family of sources; payout cards fold the same way. */
 .source-group { margin: var(--space-16) 0; }
-.source-group > summary {
+.source-group > summary, .rapport-group > summary {
   display: flex; align-items: center; gap: var(--space-8); min-height: var(--tap);
   cursor: pointer; font-weight: 600; border-radius: var(--radius-sm); transition: color var(--ease);
   list-style: none;
 }
-.source-group > summary::-webkit-details-marker { display: none; }
-.source-group > summary::before { content: "▸"; color: var(--ink-muted); transition: transform var(--ease); }
-.source-group[open] > summary::before { transform: rotate(90deg); }
-.source-group > summary:hover { color: var(--primary); }
+.source-group > summary::-webkit-details-marker, .rapport-group > summary::-webkit-details-marker { display: none; }
+.source-group > summary::before, .rapport-group > summary::before { content: "▸"; color: var(--ink-muted); transition: transform var(--ease); }
+.source-group[open] > summary::before, .rapport-group[open] > summary::before { transform: rotate(90deg); }
+.source-group > summary:hover, .rapport-group > summary:hover { color: var(--primary); }
+.rapport-group h3 { margin: 0; }
+.rapport-group[open] > summary { margin-bottom: var(--space-8); }
 .source-group .table-wrap { margin-top: var(--space-4); }
 .source-table th[scope="row"] { font-weight: 600; }
 .picks { display: flex; flex-wrap: wrap; align-items: flex-start; gap: var(--space-4); list-style: none; margin: 0; padding: 0; }
@@ -418,6 +436,16 @@ p { margin: 0 0 var(--space-16); }
 .data-table .arrival-chips { flex-wrap: nowrap; }
 .data-table td.podium { font-weight: 600; color: var(--primary); }
 
+/* Filters: folded behind a toggle on phones, the toggle disappears from 640px.
+   Without JavaScript the form stays hidden, and so does its toggle. */
+.filters-fold { margin: var(--space-24) 0; }
+.filters-fold:has(> form[hidden]) { display: none; }
+.filters-fold > summary { display: flex; width: 100%; list-style: none; }
+.filters-fold > summary::-webkit-details-marker { display: none; }
+.filters-fold > summary::after { content: "▾"; transition: transform var(--ease); }
+.filters-fold[open] > summary::after { transform: rotate(180deg); }
+.filters-fold .filters { margin: var(--space-8) 0 0; }
+
 /* Filters */
 .filters { display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--space-16); padding: var(--space-24); margin: var(--space-24) 0; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); }
 .field { display: flex; flex-direction: column; gap: var(--space-8); flex: 1 1 140px; min-width: 0; }
@@ -433,12 +461,12 @@ p { margin: 0 0 var(--space-16); }
 .section-head h2 { margin: 0; }
 .table-tools { display: flex; justify-content: flex-end; margin: var(--space-16) 0 var(--space-8); }
 .table-wrap { position: relative; overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface); margin: var(--space-8) 0 var(--space-24); }
-.data-table { width: 100%; border-collapse: collapse; font-size: var(--fs-body-sm); line-height: 1.25rem; font-variant-numeric: tabular-nums; }
+.data-table { width: 100%; border-collapse: collapse; font-size: var(--fs-body); line-height: 1.5rem; font-variant-numeric: tabular-nums; }
 .data-table caption { text-align: left; padding: var(--space-16) var(--space-16) var(--space-8); font-size: var(--fs-caption); line-height: 1rem; color: var(--ink-muted); }
 .data-table th, .data-table td { padding: var(--space-8) var(--space-16); text-align: left; border-bottom: 1px solid var(--border); vertical-align: middle; background-clip: padding-box; }
 .data-table tbody tr:last-child > * { border-bottom: 0; }
 .data-table thead th {
-  font-size: var(--fs-label); font-weight: 600; line-height: 1rem; letter-spacing: .025em; color: var(--ink-muted);
+  font-size: var(--fs-body-sm); font-weight: 600; line-height: 1.25rem; letter-spacing: .025em; color: var(--ink-muted);
   border-bottom-color: var(--border-strong); vertical-align: bottom;
 }
 .data-table tbody th { font-weight: 600; }
@@ -485,9 +513,12 @@ abbr[title] { text-decoration: underline dotted; cursor: help; }
 .m-fail { color: var(--danger); font-weight: 700; }
 .m-year { color: var(--ink-muted); font-size: var(--fs-caption); }
 
-.rapports-grid { display: grid; grid-template-columns: 1fr; gap: var(--space-24); }
-.rapports-grid .card { margin: 0; }
-.rapports-grid .data-table th, .rapports-grid .data-table td { padding-left: 0; }
+/* Phones: payout cards are folded (fold-mobile.js), so they sit as a tight list of 44px toggles. */
+.rapports-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-8); }
+.rapports-grid .card { margin: 0; padding: var(--space-8) var(--space-16); }
+.rapports-grid .card[open] { padding-bottom: var(--space-16); }
+.rapports-grid .data-table th, .rapports-grid .data-table td { padding-left: 0; padding-right: var(--space-8); }
+.rapports-grid .data-table tr > :last-child { padding-right: 0; }
 
 .day-list { list-style: none; padding: 0; margin: 0; columns: 1; }
 .day-list li { padding: var(--space-4) 0; break-inside: avoid; }
@@ -500,14 +531,46 @@ abbr[title] { text-decoration: underline dotted; cursor: help; }
   .day-list a { padding: 10px 0; }
 }
 
-/* Mobile: the first column (course code, runner number) stays visible while the table scrolls. */
+/* Mobile: the first column (runner number) stays visible while the table scrolls. */
 @media (max-width: 639px) {
-  .data-table:not(.compact) tr > :first-child { position: sticky; left: 0; z-index: 1; background: var(--surface); box-shadow: 1px 0 0 var(--border); }
+  .data-table:not(.compact):not(.course-list) tr > :first-child { position: sticky; left: 0; z-index: 1; background: var(--surface); box-shadow: 1px 0 0 var(--border); }
   .data-table.striped tbody tr:nth-child(even) > :first-child,
   .data-table .group-row > :first-child { background: var(--surface-sunken); }
   .data-table .group-row > :first-child { position: static; }
   .group-label { position: sticky; left: var(--space-16); }
-  .date-nav .button { padding: var(--space-8); font-size: var(--fs-body-sm); white-space: nowrap; min-width: 0; }
+  .date-nav .button, .course-nav .button { padding: var(--space-8); font-size: var(--fs-body-sm); white-space: nowrap; min-width: 0; }
+
+  /* Runners: the horse name sticks too, right after a fixed-width number column (its offset). */
+  .data-table.partants:not(.compact) tr > :first-child { width: 3rem; min-width: 3rem; max-width: 3rem; padding-left: var(--space-8); padding-right: var(--space-8); box-shadow: none; }
+  .partants .col-horse { position: sticky; left: 3rem; z-index: 1; background: var(--surface); box-shadow: 1px 0 0 var(--border); }
+  .data-table.striped tbody tr:nth-child(even) > .col-horse { background: var(--surface-sunken); }
+
+  /* Races of the day: each row becomes a compact card, same table markup (read by filters.js and export-csv.js).
+     Line 1 code, time, name; line 2 the finish; line 3 discipline, distance, runners, bets. */
+  .course-list, .course-list tbody, .course-list .group-row, .course-list .group-row > th { display: block; }
+  .course-list thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .course-row {
+    position: relative; display: flex; flex-wrap: wrap; align-items: flex-start; gap: var(--space-4) var(--space-8);
+    padding: var(--space-8) var(--space-16); border-bottom: 1px solid var(--border);
+  }
+  .course-row > td { display: block; padding: 0; border: 0; }
+  .course-row > .course-name { flex: 1 1 0; min-width: 0; font-weight: 600; }
+  /* Line 1 is code, time and name only: this zero-height item breaks the line after the name.
+     A finish then takes its own line; while pending, the missing chips already say so. */
+  .course-row::before { content: ""; order: 1; flex-basis: 100%; height: 0; }
+  .course-row > .course-arrival, .course-row > .course-meta { order: 2; }
+  .course-row > .course-arrival { flex-basis: 100%; }
+  .course-row > .course-arrival:not(:has(.arrival-chips)) { display: none; }
+  .course-row .arrival-place { display: none; }
+  .course-row > .course-hippo { display: none; }
+  .course-row > .course-meta { font-size: var(--fs-body-sm); color: var(--ink-muted); }
+  .course-meta + .course-meta:not(.course-bets)::before { content: "·"; content: "·" / ""; margin-right: var(--space-8); }
+  .course-runners::after { content: " partants"; }
+  .course-list .course-row > td.course-bets { display: flex; flex-wrap: wrap; gap: var(--space-4); min-width: 0; }
+  .course-row .badge { margin: 0; }
+  /* Stretched link: the name link covers the whole card, which is its positioned ancestor. */
+  .course-name a::after { content: ""; position: absolute; inset: 0; }
+  .course-name a:focus-visible::after { outline: 2px solid var(--focus); outline-offset: -2px; border-radius: var(--radius-sm); }
 }
 
 /* Below desktop the theme switch shows its icon only (the accessible name stays in aria-label). */
@@ -519,13 +582,25 @@ abbr[title] { text-decoration: underline dotted; cursor: help; }
 /* Tablet */
 @media (min-width: 640px) {
   :root { --gutter: var(--space-32); }
+  /* Payout cards only fold on phones; on larger screens they stay plain open cards. */
+  .rapport-group > summary { pointer-events: none; }
+  .rapport-group > summary::before { display: none; }
   h1 { font-size: var(--fs-display-lg); line-height: 2.75rem; }
   .header-inner { padding: var(--space-16) var(--space-24); }
   .header-inner > nav { order: 2; width: auto; }
   .theme-toggle { order: 3; }
-  .nav a { padding: 0 var(--space-8); }
+  .nav { display: flex; }
+  .nav a { padding: 0 var(--space-8); font-size: var(--fs-body-sm); }
+  .mobile-only { display: none; }
+  .filters-fold > summary { display: none; }
+  .filters-fold .filters { margin: 0; }
+  .course-nav ul { grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); grid-template-areas: "prev day next"; }
+  .course-nav .button { width: auto; }
+  .course-nav-next { justify-self: end; }
+  .page-toc ul { display: flex; flex-wrap: wrap; }
   .facts { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-  .rapports-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .rapports-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-24); }
+  .rapports-grid .card, .rapports-grid .card[open] { padding: var(--space-24); }
   .day-list { columns: 2; }
   .page-head { flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-16); }
   .date-nav { display: flex; flex-wrap: wrap; align-items: center; }
@@ -551,7 +626,7 @@ abbr[title] { text-decoration: underline dotted; cursor: help; }
 }
 
 @media print {
-  .site-header, .site-footer, .filters, .js-only, .date-nav, .theme-toggle { display: none !important; }
+  .site-header, .site-footer, .filters, .js-only, .date-nav, .theme-toggle, .filters-fold, .course-nav, .page-toc, .back-top, .mobile-only { display: none !important; }
   body { background: #fff; color: #000; }
   .card, .table-wrap, .hero-card { box-shadow: none; }
   .hero-card { background: #fff; color: #000; border: 1px solid #000; }

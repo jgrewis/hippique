@@ -50,3 +50,15 @@
     {% for p in items %}<li{% if p.place and p.place <= 3 %} class="is-hit"{% endif %}><span class="num">{{ p.numero }}</span>{% if p.place %}<span class="pick-place"><span class="sr-only">arrivé </span>{{ p.place | ordinal }}</span>{% endif %}</li>{% endfor %}
   </ol>
 {% endmacro %}
+
+
+{# Previous / next race of the day (chronological, all meetings) around the day's programme. A missing neighbour leaves its slot empty. #}
+{% macro course_nav(prev, next, day, root, label) %}
+  <nav class="course-nav" aria-label="{{ label }}">
+    <ul>
+      {% if prev %}<li class="course-nav-prev"><a class="button button-ghost" href="{{ root }}course/{{ prev.id_course }}.html" rel="prev"><span aria-hidden="true">←</span> <span class="sr-only">Course précédente :</span>R{{ prev.num_reunion }}C{{ prev.num_course }}{% if prev.heure_depart %} · {{ prev.heure_depart }}{% endif %}<span class="sr-only">, {{ prev.nom_course }}</span></a></li>{% endif %}
+      <li class="course-nav-day"><a class="button button-ghost" href="{{ root }}jour/{{ day }}.html">Programme du jour</a></li>
+      {% if next %}<li class="course-nav-next"><a class="button button-ghost" href="{{ root }}course/{{ next.id_course }}.html" rel="next"><span class="sr-only">Course suivante :</span>R{{ next.num_reunion }}C{{ next.num_course }}{% if next.heure_depart %} · {{ next.heure_depart }}{% endif %}<span class="sr-only">, {{ next.nom_course }}</span> <span aria-hidden="true">→</span></a></li>{% endif %}
+    </ul>
+  </nav>
+{% endmacro %}

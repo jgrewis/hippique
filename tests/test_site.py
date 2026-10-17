@@ -3,6 +3,7 @@ from html import unescape
 
 from predict.forecast import forecast_day
 from site_builder import template_filters as f
+from site_builder import views
 from site_builder.builder import build
 
 
@@ -59,3 +60,28 @@ def test_no_third_party_text_published(filled_conn, tmp_path):
     html = unescape("".join(p.read_text(encoding="utf-8") for p in out.rglob("*.html")))
     for text in texts:
         assert text[:40] not in html
+
+
+def test_course_neighbours_follow_start_order_across_meetings():
+    def course(reunion, num, heure):
+        return {"id_course": f"R{reunion}C{num}", "num_reunion": reunion, "num_course": num,
+                "heure_depart": heure, "nom_course": f"Prix {reunion}-{num}"}
+
+    courses = [course(2, 1, "13:00"), course(1, 2, "13:30"), course(1, 1, "13:00"), course(3, 1, None)]
+    assert [c["id_course"] for c in views.chronological(courses)] == ["R1C1", "R2C1", "R1C2", "R3C1"]
+    neighbours = views.course_neighbours(courses)
+    assert neighbours["R1C1"][0] is None
+    assert neighbours["R3C1"][1] is None
+    assert neighbours["R2C1"] == (course(1, 1, "13:00"), course(1, 2, "13:30"))
+
+
+def test_course_pages_get_neighbours_from_builder_data(filled_conn):
+    day = filled_conn.execute("SELECT MIN(date_course) FROM courses").fetchone()[0]
+    ctx = views.day_context(filled_conn, day, [day])
+    ordered = views.chronological([c for r in ctx["reunions"] for c in r["courses"]])
+    first, second = ordered[0], ordered[1]
+    page = views.course_context(filled_conn, first, ctx["neighbours"][first["id_course"]])
+    assert page["prev_course"] is None
+    assert page["next_course"]["id_course"] == second["id_course"]
+    last = views.course_context(filled_conn, ordered[-1], ctx["neighbours"][ordered[-1]["id_course"]])
+    assert last["next_course"] is None

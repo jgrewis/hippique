@@ -43,6 +43,25 @@ def _arrival_numbers(arrivee: str) -> list:
     return [int(n) for n in arrivee.replace("=", "-").split("-")] if arrivee else []
 
 
+def chronological(courses: list) -> list:
+    """Courses in start order across all meetings; those without a start time go last."""
+    return sorted(courses, key=lambda c: (c["heure_depart"] is None, c["heure_depart"] or "", c["num_reunion"], c["num_course"]))
+
+
+def _neighbour(course):
+    keys = ("id_course", "num_reunion", "num_course", "heure_depart", "nom_course")
+    return {k: course[k] for k in keys} if course else None
+
+
+def course_neighbours(courses: list) -> dict:
+    """Map each id_course to its (previous, next) course of the day, either being None at the ends."""
+    ordered = chronological(courses)
+    return {
+        c["id_course"]: (_neighbour(ordered[i - 1] if i else None), _neighbour(ordered[i + 1] if i + 1 < len(ordered) else None))
+        for i, c in enumerate(ordered)
+    }
+
+
 def day_context(conn, day: str, dates: list) -> dict:
     courses = [dict(c) for c in repo.courses_for_day(conn, day)]
     for c in courses:
@@ -55,12 +74,14 @@ def day_context(conn, day: str, dates: list) -> dict:
     ]
     quinte = next((c for c in courses if c["is_quinte"]), None)
     idx = dates.index(day)
+    neighbours = course_neighbours(courses)
     return {
         "day": day,
         "reunions": reunions,
         "nb_courses": len(courses),
         "quinte": quinte,
-        "quinte_detail": course_context(conn, quinte) if quinte else None,
+        "quinte_detail": course_context(conn, quinte, neighbours[quinte["id_course"]]) if quinte else None,
+        "neighbours": neighbours,
         "prev_day": dates[idx - 1] if idx > 0 else None,
         "next_day": dates[idx + 1] if idx + 1 < len(dates) else None,
         "first_day": dates[0],
@@ -84,7 +105,8 @@ def previous_results(conn, day: str, dates: list):
     }
 
 
-def course_context(conn, course) -> dict:
+def course_context(conn, course, neighbours=(None, None)) -> dict:
+    """Page context of one course; `neighbours` is its (previous, next) course of the day."""
     course = dict(course)
     course["paris_list"] = _paris_list(course)
     partants = [dict(p) for p in repo.partants_for_course(conn, course["id_course"])]
@@ -116,6 +138,8 @@ def course_context(conn, course) -> dict:
         "pronostic": _pronostic_summary(pronos, by_num, course),
         "pronostic_groups": _pronostic_groups(pronos, selections, market, _places(course["arrivee"])),
         "nb_presse": len(press),
+        "prev_course": neighbours[0],
+        "next_course": neighbours[1],
     }
 
 

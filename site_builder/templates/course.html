@@ -1,12 +1,24 @@
 {% extends "base.html" %}
-{% from "_macros.html" import bet_badges, discipline_badge, proba, export_button, prono_box, picks, arrival_line %}
+{% from "_macros.html" import bet_badges, discipline_badge, proba, export_button, prono_box, picks, arrival_line, course_nav %}
 {% block title %}R{{ course.num_reunion }}C{{ course.num_course }} {{ course.nom_course }} – {{ course.date_course | fr_date(false) }}{% endblock %}
 {% block content %}
-<nav class="breadcrumb" aria-label="Fil d'Ariane">
-  <a href="{{ root }}jour/{{ course.date_course }}.html">{{ course.date_course | fr_date }}</a> › R{{ course.num_reunion }}C{{ course.num_course }}
-</nav>
+{{ course_nav(prev_course, next_course, course.date_course, root, "Courses du jour") }}
 <h1>R{{ course.num_reunion }}C{{ course.num_course }} · {{ course.nom_course }}</h1>
+{% set toc = [] %}
+{% if arrival %}{% set _ = toc.append(("arrivee-title", "Arrivée")) %}{% endif %}
+{% if pronostic %}{% set _ = toc.append(("prono-" ~ course.id_course, "Pronostic")) %}{% endif %}
+{% if pronostic_groups %}{% set _ = toc.append(("sources-title", "Toutes les sources")) %}{% endif %}
+{% set _ = toc.append(("partants-title", "Partants")) %}
+{% if rapport_groups %}{% set _ = toc.append(("rapports-title", "Rapports")) %}{% endif %}
+{% if toc | length > 1 %}
+<nav class="page-toc" aria-label="Sommaire de la course">
+  <ul>
+    {% for anchor, label in toc %}<li><a class="button button-ghost" href="#{{ anchor }}">{{ label }}</a></li>{% endfor %}
+  </ul>
+</nav>
+{% endif %}
 <dl class="facts">
+  <div><dt>Date</dt><dd>{{ course.date_course | fr_date(false) }}</dd></div>
   <div><dt>Hippodrome</dt><dd>{{ course.hippodrome }}</dd></div>
   <div><dt>Départ</dt><dd>{{ course.heure_depart or "–" }}</dd></div>
   <div><dt>Discipline</dt><dd>{{ discipline_badge(course.discipline) }}</dd></div>
@@ -46,7 +58,8 @@
   <p class="note">Les 8 premiers choix de chaque source, du premier au huitième.{% if course.arrivee %} Sous chaque numéro arrivé dans les cinq premiers figure sa place ; les numéros pleins ont fini dans le tiercé.{% endif %}
     Comparez leur fiabilité sur la page <a href="{{ root }}fiabilite.html">Fiabilité</a>.</p>
   {% for group in pronostic_groups %}
-  <details class="source-group" open>
+  {# On phones only the first family (house methods) stays open; fold-mobile.js folds the others. #}
+  <details class="source-group" open{% if not loop.first %} data-fold-mobile{% endif %}>
     <summary><span class="source-group-title">{{ group.title }}</span> <small>({{ group.rows | length }})</small></summary>
     <div class="table-wrap" tabindex="0" role="region" aria-label="{{ group.title }}">
     <table class="data-table compact source-table">
@@ -71,10 +84,10 @@
   </div>
   {% if partants %}
   <div class="table-wrap" tabindex="0" role="region" aria-label="Tableau des partants">
-  <table id="partants-table" class="data-table striped">
+  <table id="partants-table" class="data-table striped partants">
     <thead>
       <tr>
-        <th scope="col" class="num">N°</th><th scope="col" class="num">Arrivée</th><th scope="col">Cheval</th><th scope="col">Driver / jockey</th>
+        <th scope="col" class="num">N°</th><th scope="col" class="num">Arrivée</th><th scope="col" class="col-horse">Cheval</th><th scope="col">Driver / jockey</th>
         <th scope="col">Entraîneur</th><th scope="col">Musique</th>
         <th scope="col" class="num">Cote matin</th><th scope="col" class="num">Cote actuelle</th>
         <th scope="col" class="num"><abbr title="Probabilité implicite de la cote du matin">Proba marché</abbr></th>
@@ -88,7 +101,7 @@
       <tr{% if p.non_partant %} class="non-partant"{% endif %}>
         <td class="num">{{ p.numero }}</td>
         <td class="num{% if p.arrivee and p.arrivee <= 3 %} podium{% endif %}">{{ (p.arrivee | ordinal) if p.arrivee else ("NP" if p.non_partant else "–") }}</td>
-        <th scope="row">{{ p.nom_cheval }}{% if p.age %} <small>{{ p.age }} ans</small>{% endif %}{% if p.non_partant %} <span class="badge badge-status">NP</span>{% endif %}
+        <th scope="row" class="col-horse">{{ p.nom_cheval }}{% if p.age %} <small>{{ p.age }} ans</small>{% endif %}{% if p.non_partant %} <span class="badge badge-status">NP</span>{% endif %}
           {% if p.valeur and p.valeur >= 1.25 and not course.arrivee %}<span class="badge badge-value" title="Le modèle l'estime plus probable que sa cote ne l'indique">sous-coté</span>{% endif %}</th>
         <td>{{ p.driver_jockey or "–" }}</td>
         <td>{{ p.entraineur or "–" }}</td>
@@ -118,8 +131,8 @@
   <h2 id="rapports-title">Rapports définitifs <small>(pour 1 € misé)</small></h2>
   <div class="rapports-grid">
     {% for group in rapport_groups %}
-    <div class="card">
-      <h3>{{ group.type | bet_label }}</h3>
+    <details class="card rapport-group" open{% if group.type != "QUINTE_PLUS" %} data-fold-mobile{% endif %}>
+      <summary><h3>{{ group.type | bet_label }}</h3></summary>
       <table class="data-table compact">
         <thead><tr><th scope="col">Pari</th><th scope="col">Combinaison</th><th scope="col" class="num">Rapport</th></tr></thead>
         <tbody>
@@ -128,12 +141,16 @@
           {% endfor %}
         </tbody>
       </table>
-    </div>
+    </details>
     {% endfor %}
   </div>
 </section>
 {% endif %}
+
+{{ course_nav(prev_course, next_course, course.date_course, root, "Courses du jour, bas de page") }}
+<p class="back-top"><a class="button button-ghost" href="#contenu"><span aria-hidden="true">↑</span> Haut de page</a></p>
 {% endblock %}
 {% block scripts %}
 <script src="{{ root }}assets/js/export-csv.js" defer></script>
+<script src="{{ root }}assets/js/fold-mobile.js" defer></script>
 {% endblock %}

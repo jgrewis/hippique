@@ -56,7 +56,7 @@ def build(conn, out: Path):
         pages += 1
         for reunion in ctx["reunions"]:
             for course in reunion["courses"]:
-                render("course.html", f"course/{course['id_course']}.html", "../", "jour", **views.course_context(conn, course))
+                render("course.html", f"course/{course['id_course']}.html", "../", "jour", **views.course_context(conn, course, ctx["neighbours"][course["id_course"]]))
                 pages += 1
 
     # Home page: today if collected, otherwise the most recent day available.
