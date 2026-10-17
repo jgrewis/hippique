@@ -17,7 +17,28 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # GitHub sometimes starts the night schedules hours late (06:24 UTC on
+  # 2026-10-17). Started after 08:00 UTC, the 1 h 40 of work would hold the
+  # "data" lock through the morning races and delay their results.
+  gate:
+    runs-on: ubuntu-latest
+    outputs:
+      run: ${{ steps.check.outputs.run }}
+    env:
+      EVENT: ${{ github.event_name }}
+    steps:
+      - id: check
+        run: |
+          if [ "$EVENT" = schedule ] && [ "$(date -u +%-H)" -ge 8 ]; then
+            echo "::warning::Lancement planifié trop tardif, historique reporté à la nuit suivante."
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          fi
+
   history:
+    needs: gate
+    if: needs.gate.outputs.run == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 120
     permissions:
