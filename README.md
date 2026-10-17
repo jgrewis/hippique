@@ -22,9 +22,9 @@ Détails techniques, endpoints, maintenance et zones grises juridiques : voir [D
 
 | Page | Contenu |
 |---|---|
-| `index.html` | Programme du jour, Quinté+ mis en avant, filtres (hippodrome, discipline, distance), export CSV |
+| `index.html` | Programme du jour, Quinté+ mis en avant (arrivée et principaux rapports), filtres (hippodrome, discipline, distance), export CSV |
 | `jour/AAAA-MM-JJ.html` | Programme et arrivées d'un jour, navigation par date |
-| `course/AAAA-MM-JJ-R1C1.html` | Arrivée, tous les pronostics (avec la place obtenue par chaque cheval), partants, cotes, probabilités, rapports |
+| `course/AAAA-MM-JJ-R1C1.html` | Arrivée et rapports, tous les pronostics (avec la place obtenue par chaque cheval), partants, cotes, probabilités |
 | `archives.html` | Tous les jours collectés |
 | `fiabilite.html` | Performance réelle des pronostics et test sur l'historique, comparés au favori |
 | `methodo.html` | Méthodes, limites, sources, cadre légal |

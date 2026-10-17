@@ -85,3 +85,36 @@ def test_course_pages_get_neighbours_from_builder_data(filled_conn):
     assert page["next_course"]["id_course"] == second["id_course"]
     last = views.course_context(filled_conn, ordered[-1], ctx["neighbours"][ordered[-1]["id_course"]])
     assert last["next_course"] is None
+
+
+def test_payouts_follow_the_arrival(filled_conn, tmp_path):
+    forecast_day(filled_conn, "2026-09-15", None, now_ms=0)
+    out = tmp_path / "site"
+    build(filled_conn, out)
+    course_html = (out / "course" / "2026-09-15-R1C1.html").read_text(encoding="utf-8")
+    assert course_html.index('id="arrivee-title"') < course_html.index('id="rapports-title"') < course_html.index('id="sources-title"')
+    home = unescape((out / "index.html").read_text(encoding="utf-8"))
+    assert 'class="hero-rapports"' in home and "Quinté+ Ordre" in home and "795,40 €" in home
+    assert "course/2026-09-15-R1C1.html#rapports-title" in home
+
+    # Arrival known, payouts not yet published by the PMU.
+    filled_conn.execute("DELETE FROM rapports")
+    build(filled_conn, out)
+    course_html = (out / "course" / "2026-09-15-R1C1.html").read_text(encoding="utf-8")
+    assert "Rapports en attente" in course_html and 'id="rapports-title"' not in course_html
+    assert "Rapports en attente de publication" in (out / "index.html").read_text(encoding="utf-8")
+
+
+def test_headline_payouts_keep_one_row_per_label():
+    groups = [
+        {"type": "QUINTE_PLUS", "rows": [
+            {"libelle": "Quinté+ Ordre", "rapport": 11384.0}, {"libelle": "Quinté+ Désordre", "rapport": 119.1},
+            {"libelle": "Bonus 4sur5", "rapport": 4.0}, {"libelle": "Bonus 4sur5", "rapport": 4.0},
+            {"libelle": "Bonus 3", "rapport": 3.4},
+        ]},
+        {"type": "QUARTE_PLUS", "rows": [{"libelle": "Quarté+ Ordre", "rapport": 2006.8}, {"libelle": "Bonus", "rapport": 17.5}]},
+        {"type": "TIERCE", "rows": [{"libelle": "Tiercé Ordre", "rapport": 496.1}, {"libelle": "Tiercé 1 NP", "rapport": 38.0}]},
+        {"type": "MULTI", "rows": [{"libelle": "Multi en 4", "rapport": 50.0}]},
+    ]
+    labels = [r["libelle"] for r in views.headline_rapports(groups)]
+    assert labels == ["Quinté+ Ordre", "Quinté+ Désordre", "Bonus 4sur5", "Bonus 3", "Quarté+ Ordre", "Tiercé Ordre"]

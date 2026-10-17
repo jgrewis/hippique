@@ -1,5 +1,6 @@
 import time
 from datetime import date
+from pathlib import Path
 
 from collect.normalize import normalize_partant, normalize_rapports
 from collect.pipeline import collect_day
@@ -132,3 +133,31 @@ def test_home_shows_previous_results_until_first_arrival(filled_conn):
     assert previous["day"] == "2026-09-15" and previous["quinte"]["arrivee"] == "7-8-6-4-12"
     filled_conn.execute("UPDATE courses SET arrivee='1-2-3' WHERE id_course='2026-09-16-R1C1'")
     assert previous_results(filled_conn, "2026-09-16", dates) is None
+
+
+def test_finished_races_without_payouts_are_pending(filled_conn):
+    from collect.pending import pending_rapports
+    start = filled_conn.execute("SELECT depart_ts FROM courses WHERE id_course='2026-09-15-R1C1'").fetchone()[0]
+    # Only R1C1 has recorded payouts: the other finished races of the fixture lack them.
+    assert "2026-09-15-R1C1" not in pending_rapports(filled_conn, start + 10 * 60_000)
+    filled_conn.execute("DELETE FROM rapports WHERE id_course='2026-09-15-R1C1'")
+    assert "2026-09-15-R1C1" in pending_rapports(filled_conn, start + 10 * 60_000)
+    assert "2026-09-15-R1C1" not in pending_rapports(filled_conn, start + 90 * 60_000)  # too old: normal schedule
+
+
+def test_relay_catches_up_on_missing_payouts():
+    import os
+    import subprocess
+    script = Path(__file__).parent.parent / "scripts" / "relay.sh"
+
+    def decide(now, pending=None):
+        env = dict(os.environ, DRY_RUN="1", NOW=str(now))
+        if pending is not None:
+            env["PENDING_RAPPORTS"] = pending
+        return subprocess.run([str(script)], env=env, capture_output=True, text=True, check=True).stdout
+
+    at_13_29 = 1792243770  # 2026-10-17 13:29:30 UTC, next slot 13:47
+    assert "Prochaine collecte à 13:47 UTC" in decide(at_13_29)
+    assert "Prochaine collecte à 13:47 UTC" in decide(at_13_29, "0")
+    assert "rattrapage à 13:35 UTC" in decide(at_13_29, "2")
+    assert "Prochaine collecte à 13:47 UTC" in decide(at_13_29 + 13 * 60, "1")  # slot sooner than the catch-up

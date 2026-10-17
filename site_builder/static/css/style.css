@@ -362,6 +362,15 @@ p { margin: 0 0 var(--space-16); }
 .hero-result { align-self: end; }
 .hero-start { margin: 0; font-family: var(--font-display); font-weight: 600; font-size: var(--fs-number); line-height: 2.5rem; color: var(--on-hero); }
 .hero-card .arrival-place { color: var(--on-hero-muted); }
+.hero-rapports-title { margin-top: var(--space-24); }
+.hero-rapports {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr)); gap: var(--space-8) var(--space-24);
+  margin: 0 0 var(--space-24);
+}
+.hero-rapports div { display: flex; justify-content: space-between; align-items: baseline; gap: var(--space-16); padding-bottom: var(--space-4); border-bottom: 1px solid color-mix(in srgb, var(--on-hero) 20%, transparent); }
+.hero-rapports dt { font-size: var(--fs-body-sm); line-height: 1.25rem; }
+.hero-rapports dd { margin: 0; font-family: var(--font-display); font-weight: 600; color: var(--on-hero); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.hero-pending { margin: var(--space-16) 0 0; font-size: var(--fs-body-sm); }
 
 /* Course facts (FicheCourse): cells separated by 1px rules */
 .facts {
@@ -618,6 +627,7 @@ abbr[title] { text-decoration: underline dotted; cursor: help; }
   h1 { font-size: var(--fs-display-xl); line-height: 3.5rem; letter-spacing: -.5px; }
   .facts { grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr)); }
   .rapports-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .hero-rapports { grid-template-columns: repeat(2, minmax(10rem, 1fr)); }
   .day-list { columns: 3; }
 }
 

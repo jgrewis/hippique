@@ -89,6 +89,15 @@ def course_state(conn, id_course: str) -> str:
     return "final" if row["externes_ok"] else "externes"
 
 
+def courses_awaiting_rapports(conn, since_ms: int) -> list:
+    """Ids of the courses started since `since_ms` (epoch ms) whose arrival is known but not the payouts."""
+    return [r["id_course"] for r in conn.execute(
+        "SELECT id_course FROM courses c WHERE arrivee IS NOT NULL AND depart_ts >= ? "
+        "AND NOT EXISTS (SELECT 1 FROM rapports r WHERE r.id_course=c.id_course) ORDER BY depart_ts",
+        (since_ms,),
+    )]
+
+
 def course_updated_at(conn, id_course: str):
     row = conn.execute("SELECT updated_at FROM courses WHERE id_course=?", (id_course,)).fetchone()
     return row["updated_at"] if row else None

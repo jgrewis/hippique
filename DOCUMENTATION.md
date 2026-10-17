@@ -18,7 +18,7 @@ jusqu'à 2 Go, sans historique.
 
 | Workflow | Déclenchement | Rôle |
 |---|---|---|
-| `collect.yml` | 05:00 UTC, puis toutes les 20 min de 09:00 à 22:40 UTC + manuel | Collecte d'hier (si incomplète) et du jour, pronostics, génération et publication. Une course non partie n'est rechargée que si elle part dans l'heure ou si ses données ont plus de 3 h : un passage sans nouveauté ne coûte qu'une requête. Les arrivées apparaissent au plus 20 min après la course. |
+| `collect.yml` | 05:00 UTC, puis toutes les 20 min de 09:00 à 22:40 UTC + manuel | Collecte d'hier (si incomplète) et du jour, pronostics, génération et publication. Une course non partie n'est rechargée que si elle part dans l'heure ou si ses données ont plus de 3 h : un passage sans nouveauté ne coûte qu'une requête. Les arrivées apparaissent au plus 20 min après la course. Le PMU publie les rapports quelques minutes après l'arrivée : si une course partie depuis moins d'une heure a son arrivée sans ses rapports (`collect/pending.py`), le relais lance la collecte suivante 6 min plus tard au lieu d'attendre le créneau (`scripts/relay.sh`). |
 | `history.yml` | 00:00 et 02:00 UTC + manuel | Complément d'historique (100 min max par passage), recalcul du backtest de toutes les sources et du logit, puis republication. |
 | `train.yml` | Lundi 04:00 UTC + manuel | Entraînement, sauvegarde datée de la base (6 conservées), republication, maintien des planifications. |
 

@@ -5,13 +5,18 @@
 # at once. So each collection waits for the next slot and dispatches the next
 # one; the cron schedule of collect.yml only starts or restarts the chain.
 #
+# When the collection saw a finished race whose payouts were not yet published
+# (PENDING_RAPPORTS > 0, from collect/pending.py), the next collection starts
+# CATCHUP_MINUTES later instead of waiting for the next slot.
+#
 #   scripts/relay.sh             # needs gh, GH_TOKEN, GH_REPO, REF_NAME, RUN_ID
-#   DRY_RUN=1 NOW=<epoch> scripts/relay.sh   # print the decision only
+#   DRY_RUN=1 NOW=<epoch> [PENDING_RAPPORTS=1] scripts/relay.sh   # print the decision only
 set -euo pipefail
 
 SLOT_MINUTES=(7 27 47)   # same minutes as the cron of collect.yml
 FIRST_HOUR=9             # UTC, same window as the cron
 LAST_HOUR=22
+CATCHUP_MINUTES=6        # PMU payouts follow the finish by a few minutes
 
 now=${NOW:-$(date -u +%s)}
 hour_start=$(( now / 3600 * 3600 ))
@@ -23,6 +28,15 @@ for offset in 0 3600; do
   done
 done
 
+reason="Prochaine collecte"
+if (( ${PENDING_RAPPORTS:-0} > 0 )); then
+  catchup=$(( now + CATCHUP_MINUTES * 60 ))
+  if (( catchup < target )); then
+    target=$catchup
+    reason="Rapports en attente : collecte de rattrapage"
+  fi
+fi
+
 hour=$(( target / 3600 % 24 ))
 label=$(printf "%02d:%02d UTC" "$hour" $(( target / 60 % 60 )))
 if (( hour < FIRST_HOUR || hour > LAST_HOUR )); then
@@ -30,7 +44,7 @@ if (( hour < FIRST_HOUR || hour > LAST_HOUR )); then
   exit 0
 fi
 wait=$(( target - now ))
-echo "Prochaine collecte à $label (dans ${wait} s)."
+echo "$reason à $label (dans ${wait} s)."
 if [ -n "${DRY_RUN:-}" ]; then exit 0; fi
 sleep "$wait"
 

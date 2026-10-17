@@ -32,6 +32,7 @@ jobs:
       pages: read       # configure-pages
     outputs:
       collect_failed: ${{ steps.collect.outcome == 'failure' }}
+      pending_rapports: ${{ steps.pending.outputs.pending_rapports }}
     env:
       GH_TOKEN: ${{ github.token }}
     steps:
@@ -49,6 +50,10 @@ jobs:
         id: collect
         continue-on-error: true
         run: python -m collect.pipeline
+      - name: Rapports en attente
+        id: pending
+        continue-on-error: true
+        run: python -m collect.pending
       - name: Pronostics du jour
         run: python -m predict.forecast
       - name: Sauvegarder la base
@@ -92,6 +97,7 @@ jobs:
       GH_REPO: ${{ github.repository }}
       REF_NAME: ${{ github.ref_name }}
       RUN_ID: ${{ github.run_id }}
+      PENDING_RAPPORTS: ${{ needs.build.outputs.pending_rapports || 0 }}
     steps:
       - uses: actions/checkout@v4
         with:

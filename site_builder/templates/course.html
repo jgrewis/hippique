@@ -6,10 +6,10 @@
 <h1>R{{ course.num_reunion }}C{{ course.num_course }} · {{ course.nom_course }}</h1>
 {% set toc = [] %}
 {% if arrival %}{% set _ = toc.append(("arrivee-title", "Arrivée")) %}{% endif %}
+{% if rapport_groups %}{% set _ = toc.append(("rapports-title", "Rapports")) %}{% endif %}
 {% if pronostic %}{% set _ = toc.append(("prono-" ~ course.id_course, "Pronostic")) %}{% endif %}
 {% if pronostic_groups %}{% set _ = toc.append(("sources-title", "Toutes les sources")) %}{% endif %}
 {% set _ = toc.append(("partants-title", "Partants")) %}
-{% if rapport_groups %}{% set _ = toc.append(("rapports-title", "Rapports")) %}{% endif %}
 {% if toc | length > 1 %}
 <nav class="page-toc" aria-label="Sommaire de la course">
   <ul>
@@ -36,6 +36,28 @@
     {% for p in arrival %}<li><span class="num">{{ p.numero }}</span> {{ p.nom_cheval }}</li>{% endfor %}
   </ol>
 </section>
+{% if rapport_groups %}
+<section aria-labelledby="rapports-title">
+  <h2 id="rapports-title">Rapports définitifs <small>(pour 1 € misé)</small></h2>
+  <div class="rapports-grid">
+    {% for group in rapport_groups %}
+    <details class="card rapport-group" open{% if group.type != "QUINTE_PLUS" %} data-fold-mobile{% endif %}>
+      <summary><h3>{{ group.type | bet_label }}</h3></summary>
+      <table class="data-table compact">
+        <thead><tr><th scope="col">Pari</th><th scope="col">Combinaison</th><th scope="col" class="num">Rapport</th></tr></thead>
+        <tbody>
+          {% for r in group.rows %}
+          <tr><td>{{ r.libelle }}</td><td>{{ r.combinaison }}</td><td class="num">{{ r.rapport | rapport }}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </details>
+    {% endfor %}
+  </div>
+</section>
+{% else %}
+<p class="note"><span class="badge badge-status">Rapports en attente</span> Le PMU publie les rapports quelques minutes après l'arrivée : ils s'afficheront ici à la prochaine mise à jour.</p>
+{% endif %}
 {% else %}
 <p><span class="badge badge-status">Arrivée en attente{% if course.heure_depart %} · départ {{ course.heure_depart }}{% endif %}</span></p>
 {% endif %}
@@ -125,27 +147,6 @@
   <p class="empty">Partants non encore publiés.</p>
   {% endif %}
 </section>
-
-{% if rapport_groups %}
-<section aria-labelledby="rapports-title">
-  <h2 id="rapports-title">Rapports définitifs <small>(pour 1 € misé)</small></h2>
-  <div class="rapports-grid">
-    {% for group in rapport_groups %}
-    <details class="card rapport-group" open{% if group.type != "QUINTE_PLUS" %} data-fold-mobile{% endif %}>
-      <summary><h3>{{ group.type | bet_label }}</h3></summary>
-      <table class="data-table compact">
-        <thead><tr><th scope="col">Pari</th><th scope="col">Combinaison</th><th scope="col" class="num">Rapport</th></tr></thead>
-        <tbody>
-          {% for r in group.rows %}
-          <tr><td>{{ r.libelle }}</td><td>{{ r.combinaison }}</td><td class="num">{{ r.rapport | rapport }}</td></tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </details>
-    {% endfor %}
-  </div>
-</section>
-{% endif %}
 
 {{ course_nav(prev_course, next_course, course.date_course, root, "Courses du jour, bas de page") }}
 <p class="back-top"><a class="button button-ghost" href="#contenu"><span aria-hidden="true">↑</span> Haut de page</a></p>

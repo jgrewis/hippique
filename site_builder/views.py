@@ -18,6 +18,7 @@ DISPLAY_FAMILIES = (
     ("parieurs", "Parieurs"),
     ("combinaisons", "Combinaisons les plus jouées"),
 )
+HEADLINE_BETS = ("QUINTE_PLUS", "QUARTE_PLUS", "TIERCE")
 DISTANCE_BUCKETS = ((1600, "< 1 600 m"), (2100, "1 600 – 2 099 m"), (2700, "2 100 – 2 699 m"), (10 ** 6, "≥ 2 700 m"))
 
 
@@ -62,6 +63,22 @@ def course_neighbours(courses: list) -> dict:
     }
 
 
+def headline_rapports(rapport_groups: list) -> list:
+    """Order and disorder payouts of the Quinté+, Quarté+ and Tiercé, plus the Quinté+ bonuses,
+    one row per label (bonus payouts are identical for every combination)."""
+    rows, seen = [], set()
+    for group in rapport_groups:
+        if group["type"] not in HEADLINE_BETS:
+            continue
+        for r in group["rows"]:
+            label = r["libelle"]
+            wanted = "ordre" in label.lower() or (group["type"] == "QUINTE_PLUS" and label.lower().startswith("bonus"))
+            if wanted and label not in seen and r["rapport"] is not None:
+                seen.add(label)
+                rows.append({"libelle": label, "rapport": r["rapport"]})
+    return rows
+
+
 def day_context(conn, day: str, dates: list) -> dict:
     courses = [dict(c) for c in repo.courses_for_day(conn, day)]
     for c in courses:
@@ -75,12 +92,14 @@ def day_context(conn, day: str, dates: list) -> dict:
     quinte = next((c for c in courses if c["is_quinte"]), None)
     idx = dates.index(day)
     neighbours = course_neighbours(courses)
+    quinte_detail = course_context(conn, quinte, neighbours[quinte["id_course"]]) if quinte else None
     return {
         "day": day,
         "reunions": reunions,
         "nb_courses": len(courses),
         "quinte": quinte,
-        "quinte_detail": course_context(conn, quinte, neighbours[quinte["id_course"]]) if quinte else None,
+        "quinte_detail": quinte_detail,
+        "quinte_rapports": headline_rapports(quinte_detail["rapport_groups"]) if quinte_detail else [],
         "neighbours": neighbours,
         "prev_day": dates[idx - 1] if idx > 0 else None,
         "next_day": dates[idx + 1] if idx + 1 < len(dates) else None,

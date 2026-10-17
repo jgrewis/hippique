@@ -47,6 +47,15 @@
     {% if quinte.arrivee %}
     <p class="hero-kicker">Arrivée</p>
     {{ arrival_line(quinte.arrivee) }}
+    {% if quinte_rapports %}
+    <p class="hero-kicker hero-rapports-title">Rapports pour 1 €</p>
+    <dl class="hero-rapports">
+      {% for r in quinte_rapports %}<div><dt>{{ r.libelle }}</dt><dd>{{ r.rapport | rapport }}</dd></div>{% endfor %}
+    </dl>
+    <a class="button button-secondary" href="{{ root }}course/{{ quinte.id_course }}.html#rapports-title">Tous les rapports</a>
+    {% else %}
+    <p class="hero-pending">Rapports en attente de publication par le PMU.</p>
+    {% endif %}
     {% else %}
     <p class="hero-kicker">Départ</p>
     <p class="hero-start">{{ quinte.heure_depart or "à venir" }}</p>
